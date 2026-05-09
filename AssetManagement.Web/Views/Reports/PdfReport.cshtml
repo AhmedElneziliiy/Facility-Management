@@ -1,0 +1,252 @@
+@using AssetManagement.Models.ViewModels
+@model ReportsViewModel
+@{
+    Layout = null; // Standalone page — no sidebar/layout
+
+    var open       = Model.Tickets.Count(t => t.Status == "open");
+    var inProgress = Model.Tickets.Count(t => t.Status == "in_progress");
+    var closed     = Model.Tickets.Count(t => t.Status == "closed");
+    var overdue    = Model.Tickets.Count(t => t.IsOverdue);
+    var critical   = Model.Tickets.Count(t => t.Priority.Equals("critical", StringComparison.OrdinalIgnoreCase));
+    var urgent     = Model.Tickets.Count(t => t.Priority.Equals("urgent",   StringComparison.OrdinalIgnoreCase));
+
+    string PriorityBg(string p) => p.ToLower() switch {
+        "critical" => "linear-gradient(135deg,#fa709a,#fee140)",
+        "urgent"   => "linear-gradient(135deg,#f093fb,#f5576c)",
+        "normal"   => "linear-gradient(135deg,#667eea,#764ba2)",
+        "low"      => "linear-gradient(135deg,#11998e,#38ef7d)",
+        _          => "linear-gradient(135deg,#a0aec0,#718096)"
+    };
+    string StatusBg(string s) => s.ToLower() switch {
+        "open"        => "linear-gradient(135deg,#667eea,#764ba2)",
+        "in_progress" => "linear-gradient(135deg,#f39c12,#f5a623)",
+        "closed"      => "linear-gradient(135deg,#11998e,#38ef7d)",
+        _             => "linear-gradient(135deg,#a0aec0,#718096)"
+    };
+    string StatusLabel(string s) => s.ToLower() switch {
+        "open"        => "Open",
+        "in_progress" => "In Progress",
+        "closed"      => "Closed",
+        _             => s
+    };
+    var activeFilters = new List<string>();
+    if (!string.IsNullOrEmpty(Model.Filter.Status))   activeFilters.Add($"Status: {StatusLabel(Model.Filter.Status)}");
+    if (!string.IsNullOrEmpty(Model.Filter.Priority)) activeFilters.Add($"Priority: {System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Model.Filter.Priority)}");
+    if (Model.Filter.BuildingId.HasValue) {
+        var bName = Model.Buildings.FirstOrDefault(b => b.Id == Model.Filter.BuildingId)?.Name;
+        if (bName != null) activeFilters.Add($"Building: {bName}");
+    }
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tickets Report — @DateTime.Now.ToString("MMMM d, yyyy")</title>
+    <link href="~/css/views/pdf-report.css" rel="stylesheet" asp-append-version="true" />
+</head>
+<body>
+
+<!-- ════════════ PRINT BAR (visible on screen, hidden on print) ════════════ -->
+<div class="pdf-print-bar">
+    <div>
+        <div class="pdf-print-bar-title"><i>&#x1F4CA;</i> Tickets Report — @DateTime.Now.ToString("MMMM d, yyyy")</div>
+        <div class="pdf-print-bar-meta">@Model.Total record(s) · Use Ctrl+P or click Print to save as PDF</div>
+    </div>
+    <div style="display:flex;gap:10px">
+        <button class="pdf-print-btn" onclick="window.print()">&#x1F5A8; Print / Save PDF</button>
+        <a class="pdf-close-btn" href="/Reports">&#x2190; Back to Reports</a>
+    </div>
+</div>
+<div class="pdf-top-spacer"></div>
+
+<!-- ════════════ PAGE CONTENT ════════════ -->
+<div class="pdf-page">
+
+    <!-- HEADER -->
+    <div class="pdf-header">
+        <div class="pdf-header-inner">
+            <div class="pdf-logo-row">
+                <div class="pdf-logo-icon">&#x1F3E2;</div>
+                <div>
+                    <div class="pdf-company-name">Facility Management System</div>
+                    <div class="pdf-report-title">Tickets Report</div>
+                </div>
+            </div>
+            <div class="pdf-meta-row">
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    @if (activeFilters.Any())
+                    {
+                        foreach (var f in activeFilters)
+                        {
+                            <span class="pdf-meta-pill">@f</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="pdf-meta-pill">All Tickets</span>
+                    }
+                    <span class="pdf-meta-pill">@Model.Total Record(s)</span>
+                </div>
+                <div class="pdf-generated">Generated: @DateTime.Now.ToString("MMM d, yyyy · HH:mm")</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div class="pdf-kpi-row">
+        <div class="pdf-kpi" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+            <div class="pdf-kpi-num">@Model.Total</div>
+            <div class="pdf-kpi-label">Total</div>
+        </div>
+        <div class="pdf-kpi" style="background:linear-gradient(135deg,#667eea,#764ba2);opacity:.75">
+            <div class="pdf-kpi-num">@open</div>
+            <div class="pdf-kpi-label">Open</div>
+        </div>
+        <div class="pdf-kpi" style="background:linear-gradient(135deg,#f39c12,#f5a623)">
+            <div class="pdf-kpi-num">@inProgress</div>
+            <div class="pdf-kpi-label">In Progress</div>
+        </div>
+        <div class="pdf-kpi" style="background:linear-gradient(135deg,#11998e,#38ef7d)">
+            <div class="pdf-kpi-num">@closed</div>
+            <div class="pdf-kpi-label">Closed</div>
+        </div>
+        <div class="pdf-kpi" style="background:linear-gradient(135deg,#fa709a,#fee140)">
+            <div class="pdf-kpi-num">@overdue</div>
+            <div class="pdf-kpi-label">Overdue</div>
+        </div>
+        <div class="pdf-kpi" style="background:linear-gradient(135deg,#f093fb,#f5576c)">
+            <div class="pdf-kpi-num">@(critical + urgent)</div>
+            <div class="pdf-kpi-label">High Priority</div>
+        </div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="pdf-legend">
+        <span class="pdf-legend-label">Priority:</span>
+        <div class="pdf-legend-group">
+            <span class="pdf-pill" style="background:linear-gradient(135deg,#fa709a,#fee140)">Critical</span>
+        </div>
+        <div class="pdf-legend-group">
+            <span class="pdf-pill" style="background:linear-gradient(135deg,#f093fb,#f5576c)">Urgent</span>
+        </div>
+        <div class="pdf-legend-group">
+            <span class="pdf-pill" style="background:linear-gradient(135deg,#667eea,#764ba2)">Normal</span>
+        </div>
+        <div class="pdf-legend-group">
+            <span class="pdf-pill" style="background:linear-gradient(135deg,#11998e,#38ef7d)">Low</span>
+        </div>
+        <span style="width:1px;background:#e2e8f0;margin:0 4px"></span>
+        <span class="pdf-legend-label">Status:</span>
+        <div class="pdf-legend-group">
+            <span class="pdf-pill" style="background:linear-gradient(135deg,#667eea,#764ba2)">Open</span>
+        </div>
+        <div class="pdf-legend-group">
+            <span class="pdf-pill" style="background:linear-gradient(135deg,#f39c12,#f5a623)">In Progress</span>
+        </div>
+        <div class="pdf-legend-group">
+            <span class="pdf-pill" style="background:linear-gradient(135deg,#11998e,#38ef7d)">Closed</span>
+        </div>
+        <span style="width:1px;background:#e2e8f0;margin:0 4px"></span>
+        <div class="pdf-legend-group" style="background:#fff5f7;border-radius:6px;padding:3px 8px">
+            <span style="font-size:10px;color:#fa709a;font-weight:700">&#9632; Overdue row</span>
+        </div>
+        <div class="pdf-legend-group" style="background:#f0fff9;border-radius:6px;padding:3px 8px">
+            <span style="font-size:10px;color:#11998e;font-weight:700">&#9632; Closed row</span>
+        </div>
+    </div>
+
+    @if (activeFilters.Any())
+    {
+        <div class="pdf-filters-bar">
+            <strong>Active Filters:</strong> @string.Join(" · ", activeFilters)
+        </div>
+    }
+
+    <!-- TABLE -->
+    <div class="pdf-table-wrap">
+        <table class="pdf-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Ticket No.</th>
+                    <th>Title</th>
+                    <th>Asset</th>
+                    <th>Building / Floor</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Assigned To</th>
+                    <th>Created</th>
+                    <th>Due</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{int rowNum = 0;}
+                @foreach (var t in Model.Tickets)
+                {
+                    rowNum++;
+                    var rowClass = t.IsOverdue ? "pdf-overdue-row" : (t.Status == "closed" ? "pdf-closed-row" : "");
+                    <tr class="@rowClass">
+                        <td style="color:#a0aec0;font-size:11px;font-weight:700">@rowNum</td>
+                        <td><span class="pdf-tnum">@t.TicketNumber</span></td>
+                        <td>
+                            <div class="pdf-ttitle">
+                                @t.Title
+                                @if (t.IsOverdue)
+                                {
+                                    <span class="pdf-overdue-tag">Overdue</span>
+                                }
+                            </div>
+                            <div class="pdf-tsub">@t.CreatedByUserName</div>
+                        </td>
+                        <td style="font-size:11px;color:#718096">@t.AssetName</td>
+                        <td style="font-size:11px;color:#718096">
+                            @t.BuildingName
+                            @if (t.FloorLevel.HasValue)
+                            {
+                                <span style="color:#a0aec0">· F@(t.FloorLevel)</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="pdf-pill" style="background:@PriorityBg(t.Priority)">@t.Priority</span>
+                        </td>
+                        <td>
+                            <span class="pdf-pill" style="background:@StatusBg(t.Status)">@StatusLabel(t.Status)</span>
+                        </td>
+                        <td style="font-size:11px;color:#718096">@(t.AssignedToUserName ?? "—")</td>
+                        <td style="font-size:11px;color:#a0aec0">@t.CreatedAt.ToString("MMM d, yyyy")</td>
+                        <td class="@(t.IsOverdue ? "pdf-due-overdue" : "pdf-due-ok")" style="font-size:11px">
+                            @t.DueAt.ToString("MMM d · HH:mm")
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Tickets.Any())
+                {
+                    <tr>
+                        <td colspan="10" style="text-align:center;padding:40px;color:#a0aec0;font-size:13px">
+                            No tickets match the selected filters.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="pdf-footer">
+        <div class="pdf-footer-brand">
+            <div class="pdf-footer-dot"></div>
+            <span style="font-weight:700;color:#4a5568">Facility Management System</span>
+        </div>
+        <div style="text-align:center;color:#a0aec0">
+            @Model.Total record(s) exported · @DateTime.Now.ToString("MMMM d, yyyy")
+        </div>
+        <div style="color:#a0aec0">
+            Page 1 of 1
+        </div>
+    </div>
+
+</div><!-- end .pdf-page -->
+
+</body>
+</html>

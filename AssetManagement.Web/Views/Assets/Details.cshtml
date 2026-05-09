@@ -1,0 +1,201 @@
+@using AssetManagement.Models.Entities
+@model Asset
+@{
+    ViewData["Title"] = $"Asset — {Model.Name}";
+
+    string StatusGrad(string s) => s.ToLower() switch {
+        "operational"       => "linear-gradient(135deg,#11998e,#38ef7d)",
+        "under_maintenance" => "linear-gradient(135deg,#f093fb,#f5576c)",
+        _                   => "linear-gradient(135deg,#a0aec0,#718096)"
+    };
+    string StatusIcon(string s) => s.ToLower() switch {
+        "operational"       => "bi-check-circle-fill",
+        "under_maintenance" => "bi-tools",
+        _                   => "bi-slash-circle"
+    };
+    string CritGrad(string c) => c.ToLower() switch {
+        "critical"    => "linear-gradient(135deg,#fa709a,#fee140)",
+        "safety"      => "linear-gradient(135deg,#f093fb,#f5576c)",
+        "operational" => "linear-gradient(135deg,#4facfe,#00f2fe)",
+        _             => "linear-gradient(135deg,#11998e,#38ef7d)"
+    };
+
+    var isOverdue = Model.NextServiceDueAt.HasValue && Model.NextServiceDueAt.Value < DateTime.UtcNow;
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/assets-details.css" asp-append-version="true" />
+}
+
+<!-- ════════════ HERO ════════════ -->
+<div class="detail-hero">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+        <div>
+            <a asp-action="Index" asp-route-buildingId="@Model.BuildingId" class="hero-back">
+                <i class="bi bi-arrow-left"></i>Back to Assets
+            </a>
+            <p class="hero-name"><i class="bi bi-cpu-fill me-2" style="opacity:.85"></i>@Model.Name</p>
+            <p class="hero-sub">
+                <i class="bi bi-building me-1"></i>@(Model.Building?.Name ?? "—")
+                @if (Model.Floor != null) { <span class="ms-2"><i class="bi bi-layers me-1"></i>Floor @Model.Floor.Level@(Model.Floor.Name != null ? $" – {Model.Floor.Name}" : "")</span> }
+            </p>
+        </div>
+        <div class="hero-actions">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="hbtn hbtn-edit">
+                <i class="bi bi-pencil"></i>Edit
+            </a>
+            <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="mb-0"
+                  onsubmit="return confirm('Delete @Model.Name? This cannot be undone.')">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="hbtn hbtn-del">
+                    <i class="bi bi-trash"></i>Delete
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="hero-chips">
+        <span class="hero-chip" style="background:@StatusGrad(Model.Status)">
+            <i class="bi @StatusIcon(Model.Status)" style="font-size:11px"></i>
+            @Model.Status.Replace("_"," ")
+        </span>
+        <span class="hero-chip" style="background:@CritGrad(Model.Criticality)">
+            <i class="bi bi-exclamation-diamond" style="font-size:11px"></i>
+            @Model.Criticality Criticality
+        </span>
+        @if (isOverdue)
+        {
+            <span class="hero-chip" style="background:linear-gradient(135deg,#fa709a,#fee140)">
+                <i class="bi bi-exclamation-circle" style="font-size:11px"></i>Service Overdue
+            </span>
+        }
+    </div>
+</div>
+
+<!-- ════════════ BODY ════════════ -->
+<div class="row g-4">
+
+    <!-- Left col -->
+    <div class="col-lg-8">
+
+        <!-- Asset Details -->
+        <div class="det-card">
+            <div class="det-card-header">
+                <i class="bi bi-info-circle-fill"></i>Asset Details
+            </div>
+            <div class="det-body">
+                <div class="det-grid">
+                    <div class="det-item">
+                        <div class="det-label">Asset Name</div>
+                        <div class="det-value">@Model.Name</div>
+                    </div>
+                    <div class="det-item">
+                        <div class="det-label">Serial Number</div>
+                        <div class="det-value mono">@(Model.SerialNumber ?? "—")</div>
+                    </div>
+                    <div class="det-item">
+                        <div class="det-label">Building</div>
+                        <div class="det-value">@(Model.Building?.Name ?? "—")</div>
+                    </div>
+                    <div class="det-item">
+                        <div class="det-label">Floor</div>
+                        <div class="det-value">
+                            @if (Model.Floor != null)
+                            {
+                                <span><i class="bi bi-layers me-1" style="color:#667eea;font-size:12px"></i>Floor @Model.Floor.Level@(Model.Floor.Name != null ? $" – {Model.Floor.Name}" : "")</span>
+                            }
+                            else { <span class="muted">—</span> }
+                        </div>
+                    </div>
+                    <div class="det-item">
+                        <div class="det-label">Status</div>
+                        <div class="det-value">
+                            <span class="det-pill" style="background:@StatusGrad(Model.Status)">
+                                <i class="bi @StatusIcon(Model.Status)" style="font-size:10px"></i>
+                                @Model.Status.Replace("_"," ")
+                            </span>
+                        </div>
+                    </div>
+                    <div class="det-item">
+                        <div class="det-label">Criticality</div>
+                        <div class="det-value">
+                            <span class="det-pill" style="background:@CritGrad(Model.Criticality)">
+                                @Model.Criticality
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Schedule -->
+        <div class="det-card">
+            <div class="det-card-header">
+                <i class="bi bi-calendar-check-fill"></i>Service Schedule
+            </div>
+            <div class="det-body">
+                <div class="det-grid">
+                    <div class="det-item">
+                        <div class="det-label">Last Serviced</div>
+                        <div class="det-value">
+                            @if (Model.LastServicedAt.HasValue)
+                            {
+                                <span><i class="bi bi-calendar-check me-1" style="color:#11998e;font-size:12px"></i>@Model.LastServicedAt.Value.ToString("MMMM d, yyyy")</span>
+                            }
+                            else { <span class="muted det-value">Never serviced</span> }
+                        </div>
+                    </div>
+                    <div class="det-item">
+                        <div class="det-label">Next Service Due</div>
+                        <div class="det-value @(isOverdue ? "det-overdue" : "")">
+                            @if (Model.NextServiceDueAt.HasValue)
+                            {
+                                <i class="bi @(isOverdue ? "bi-exclamation-circle" : "bi-calendar3") me-1" style="font-size:12px"></i>
+                                @Model.NextServiceDueAt.Value.ToString("MMMM d, yyyy")
+                                @if (isOverdue)
+                                {
+                                    <span style="font-size:10px;background:linear-gradient(135deg,#fa709a,#fee140);color:#fff;border-radius:8px;padding:2px 7px;margin-left:6px;font-weight:700">OVERDUE</span>
+                                }
+                            }
+                            else { <span class="muted det-value">Not scheduled</span> }
+                        </div>
+                    </div>
+                    <div class="det-item no-border">
+                        <div class="det-label">Record Created</div>
+                        <div class="det-value muted" style="font-size:13px">@Model.CreatedAt.ToString("MMMM d, yyyy · HH:mm") UTC</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right col: QR -->
+    <div class="col-lg-4">
+        <div class="qr-card">
+            <div class="qr-card-header">
+                <i class="bi bi-qr-code-scan"></i>QR Code
+            </div>
+            <div class="qr-body">
+                <span id="qrMeta" data-qr-code="@Model.QRCode" data-asset-name="@Html.Raw(Model.Name.Replace("\"", "&quot;"))" style="display:none"></span>
+                <div id="qrcode" class="d-flex justify-content-center"></div>
+                <div class="qr-code-text">@Model.QRCode</div>
+                <div class="qr-hint">Scan to identify this asset</div>
+                <div class="d-flex gap-2 justify-content-center mt-3 flex-wrap">
+                    <button class="qr-print-btn" onclick="printQR()">
+                        <i class="bi bi-printer"></i>Print
+                    </button>
+                    <a id="qrDownloadBtn" class="qr-print-btn" download="@(Model.QRCode).png" style="opacity:.5;pointer-events:none">
+                        <i class="bi bi-download"></i>Download
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="~/js/views/assets-details.js" asp-append-version="true"></script>
+}

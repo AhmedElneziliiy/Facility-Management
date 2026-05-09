@@ -1,0 +1,199 @@
+@model CreateTicketViewModel
+@{
+    ViewData["Title"] = "New Ticket";
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/tickets-create.css" asp-append-version="true" />
+}
+
+<!-- ════════════ HERO ════════════ -->
+<div class="form-hero">
+    <a asp-action="Index" class="hero-back">
+        <i class="bi bi-arrow-left"></i>Back to Tickets
+    </a>
+    <p class="hero-title"><i class="bi bi-ticket-detailed-fill me-2" style="opacity:.85"></i>New Ticket</p>
+    <p class="hero-sub">Report a new maintenance or facility issue</p>
+</div>
+
+<!-- ════════════ BODY ════════════ -->
+<div class="row g-4">
+
+    <!-- Form col -->
+    <div class="col-lg-8">
+        <div class="form-card">
+            <div class="form-card-header">
+                <i class="bi bi-pencil-square"></i>Ticket Details
+            </div>
+
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4 rounded-3"></div>
+
+                    <!-- Asset -->
+                    <div class="mb-4">
+                        <label class="field-label"><i class="bi bi-cpu me-1"></i>Asset *</label>
+                        <select asp-for="AssetId" class="field-select" required>
+                            <option value="">— Select an asset —</option>
+                            @foreach (var a in Model.Assets)
+                            {
+                                <option value="@a.Id">@a.Name — @a.BuildingName (@a.QRCode)</option>
+                            }
+                        </select>
+                        <span asp-validation-for="AssetId" class="field-error"></span>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="mb-4">
+                        <label class="field-label"><i class="bi bi-card-heading me-1"></i>Title *</label>
+                        <input asp-for="Title" class="field-input" placeholder="Brief description of the issue" maxlength="200" />
+                        <span asp-validation-for="Title" class="field-error"></span>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <label class="field-label"><i class="bi bi-text-left me-1"></i>Description *</label>
+                        <textarea asp-for="Description" class="field-textarea"
+                                  placeholder="Provide full details — what happened, where, when, how severe…"></textarea>
+                        <span asp-validation-for="Description" class="field-error"></span>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <!-- Priority -->
+                    <div class="mb-2">
+                        <label class="field-label"><i class="bi bi-exclamation-diamond me-1"></i>Priority *</label>
+                        <div class="priority-grid">
+
+                            <div class="priority-opt p-critical">
+                                <input type="radio" name="Priority" id="p_critical" value="critical"
+                                       @(Model.Priority == "critical" ? "checked" : "") />
+                                <label class="priority-card" for="p_critical">
+                                    <div class="pcrit-name">
+                                        <span class="pcrit-dot" style="background:linear-gradient(135deg,#fa709a,#fee140)"></span>
+                                        Critical
+                                    </div>
+                                    <div class="pcrit-sla">Immediate action · SLA 4h</div>
+                                </label>
+                            </div>
+
+                            <div class="priority-opt p-urgent">
+                                <input type="radio" name="Priority" id="p_urgent" value="urgent"
+                                       @(Model.Priority == "urgent" ? "checked" : "") />
+                                <label class="priority-card" for="p_urgent">
+                                    <div class="pcrit-name">
+                                        <span class="pcrit-dot" style="background:linear-gradient(135deg,#f093fb,#f5576c)"></span>
+                                        Urgent
+                                    </div>
+                                    <div class="pcrit-sla">High priority · SLA 12h</div>
+                                </label>
+                            </div>
+
+                            <div class="priority-opt p-normal">
+                                <input type="radio" name="Priority" id="p_normal" value="normal"
+                                       @(Model.Priority == "normal" ? "checked" : "") />
+                                <label class="priority-card" for="p_normal">
+                                    <div class="pcrit-name">
+                                        <span class="pcrit-dot" style="background:linear-gradient(135deg,#667eea,#764ba2)"></span>
+                                        Normal
+                                    </div>
+                                    <div class="pcrit-sla">Standard issue · SLA 24h</div>
+                                </label>
+                            </div>
+
+                            <div class="priority-opt p-low">
+                                <input type="radio" name="Priority" id="p_low" value="low"
+                                       @(Model.Priority == "low" ? "checked" : "") />
+                                <label class="priority-card" for="p_low">
+                                    <div class="pcrit-name">
+                                        <span class="pcrit-dot" style="background:linear-gradient(135deg,#11998e,#38ef7d)"></span>
+                                        Low
+                                    </div>
+                                    <div class="pcrit-sla">Minor issue · SLA 48h</div>
+                                </label>
+                            </div>
+
+                        </div>
+                        <span asp-validation-for="Priority" class="field-error mt-2"></span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="bi bi-x-lg"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn-submit">
+                        <i class="bi bi-ticket-detailed"></i>Submit Ticket
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tips sidebar -->
+    <div class="col-lg-4">
+        <div class="tips-card">
+            <div class="tips-header">
+                <i class="bi bi-lightbulb-fill"></i>Submission Tips
+            </div>
+            <div class="tips-body">
+                <div class="tip-item">
+                    <div class="tip-icon" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+                        <i class="bi bi-cpu"></i>
+                    </div>
+                    <div class="tip-text">
+                        <strong>Select the right asset</strong>
+                        Choose the specific piece of equipment or location that has the issue.
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <div class="tip-icon" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">
+                        <i class="bi bi-card-heading"></i>
+                    </div>
+                    <div class="tip-text">
+                        <strong>Clear, concise title</strong>
+                        e.g. "HVAC Unit 3 not cooling Floor 2" rather than "AC broken".
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <div class="tip-icon" style="background:linear-gradient(135deg,#11998e,#38ef7d)">
+                        <i class="bi bi-text-paragraph"></i>
+                    </div>
+                    <div class="tip-text">
+                        <strong>Full description helps</strong>
+                        Include when it started, error codes, safety concerns, and any steps already taken.
+                    </div>
+                </div>
+
+                <div class="section-divider" style="margin-top:20px"></div>
+
+                <div style="font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">SLA Reference</div>
+                <div class="sla-grid">
+                    <div class="sla-item">
+                        <span class="sla-badge" style="background:linear-gradient(135deg,#fa709a,#fee140)"></span>
+                        <span class="sla-label">Critical</span>
+                        <span class="sla-val">4 hours</span>
+                    </div>
+                    <div class="sla-item">
+                        <span class="sla-badge" style="background:linear-gradient(135deg,#f093fb,#f5576c)"></span>
+                        <span class="sla-label">Urgent</span>
+                        <span class="sla-val">12 hours</span>
+                    </div>
+                    <div class="sla-item">
+                        <span class="sla-badge" style="background:linear-gradient(135deg,#667eea,#764ba2)"></span>
+                        <span class="sla-label">Normal</span>
+                        <span class="sla-val">24 hours</span>
+                    </div>
+                    <div class="sla-item">
+                        <span class="sla-badge" style="background:linear-gradient(135deg,#11998e,#38ef7d)"></span>
+                        <span class="sla-label">Low</span>
+                        <span class="sla-val">48 hours</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

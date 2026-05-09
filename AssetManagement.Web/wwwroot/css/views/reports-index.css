@@ -1,0 +1,114 @@
+/* ── Hero ─────────────────────────────────────── */
+.rpt-hero {
+    background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+    border-radius: 16px; padding: 28px 32px; color: #fff;
+    position: relative; overflow: hidden; margin-bottom: 24px;
+}
+.rpt-hero::before { content:''; position:absolute; top:-50px; right:-50px; width:220px; height:220px; border-radius:50%; background:rgba(255,255,255,.07); }
+.rpt-hero::after  { content:''; position:absolute; bottom:-70px; left:38%; width:280px; height:280px; border-radius:50%; background:rgba(255,255,255,.05); }
+.rpt-hero-title   { font-size:22px; font-weight:800; margin:0 0 4px; position:relative; z-index:1; }
+.rpt-hero-sub     { font-size:13px; opacity:.8; margin:0; position:relative; z-index:1; }
+.rpt-export-btns  { display:flex; gap:8px; flex-wrap:wrap; position:relative; z-index:1; }
+.rpt-ebtn {
+    display:inline-flex; align-items:center; gap:6px;
+    border-radius:9px; padding:9px 18px; font-size:13px; font-weight:600;
+    text-decoration:none; border:none; cursor:pointer; transition:all .2s;
+}
+.rpt-ebtn-excel   { background:rgba(17,153,142,.25); color:#fff; border:1px solid rgba(56,239,125,.35); }
+.rpt-ebtn-excel:hover { background:rgba(17,153,142,.45); color:#fff; }
+.rpt-ebtn-csv     { background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.25); }
+.rpt-ebtn-csv:hover { background:rgba(255,255,255,.25); color:#fff; }
+.rpt-ebtn-pdf     { background:rgba(245,87,108,.25); color:#fff; border:1px solid rgba(245,87,108,.4); }
+.rpt-ebtn-pdf:hover { background:rgba(245,87,108,.45); color:#fff; }
+
+/* ── KPI Strip ────────────────────────────────── */
+.rpt-kpi-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+@media(max-width:768px){ .rpt-kpi-strip { grid-template-columns:1fr 1fr; } }
+.rpt-kpi {
+    border-radius:14px; padding:20px 22px; color:#fff;
+    position:relative; overflow:hidden;
+}
+.rpt-kpi::after { content:''; position:absolute; bottom:-12px; right:-12px; width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,.1); }
+.rpt-kpi-icon  { position:absolute; top:14px; right:16px; font-size:24px; opacity:.28; }
+.rpt-kpi-num   { font-size:32px; font-weight:800; line-height:1; }
+.rpt-kpi-label { font-size:12px; opacity:.85; margin-top:5px; }
+
+/* ── Filter Card ──────────────────────────────── */
+.rpt-filter-card { background:#fff; border-radius:14px; box-shadow:0 4px 20px rgba(102,126,234,.09); padding:20px 24px; margin-bottom:20px; }
+.rpt-filter-card-header { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#2d3748; margin-bottom:16px; }
+.rpt-filter-card-header i { color:#667eea; font-size:15px; }
+.rpt-field-label { font-size:11px; font-weight:700; color:#718096; text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; display:block; }
+.rpt-select {
+    width:100%; height:38px; border:1.5px solid #e2e8f0; border-radius:9px;
+    padding:0 12px; font-size:13px; color:#2d3748; background:#fff;
+    appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23718096' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:calc(100% - 12px) center; padding-right:32px;
+    transition:border-color .2s, box-shadow .2s; outline:none;
+}
+.rpt-select:focus { border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,.12); }
+.rpt-btn-apply {
+    display:inline-flex; align-items:center; gap:6px;
+    background:linear-gradient(135deg,#667eea,#764ba2); color:#fff;
+    border:none; border-radius:9px; padding:9px 20px; font-size:13px; font-weight:700; cursor:pointer; transition:opacity .2s;
+}
+.rpt-btn-apply:hover { opacity:.88; }
+.rpt-btn-clear {
+    display:inline-flex; align-items:center; gap:6px;
+    background:#f7fafc; color:#718096; border:1.5px solid #e2e8f0;
+    border-radius:9px; padding:8px 16px; font-size:13px; font-weight:600; text-decoration:none; transition:all .2s;
+}
+.rpt-btn-clear:hover { background:#fee2e2; color:#e53e3e; border-color:#fca5a5; }
+
+/* Active filter tags */
+.rpt-filter-tags { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.rpt-tag {
+    display:inline-flex; align-items:center; gap:5px;
+    background:rgba(102,126,234,.1); color:#667eea;
+    border:1px solid rgba(102,126,234,.25); border-radius:20px;
+    padding:4px 10px; font-size:11px; font-weight:700;
+}
+.rpt-tag a { color:inherit; text-decoration:none; font-size:10px; font-weight:900; margin-left:2px; }
+.rpt-tag a:hover { color:#e53e3e; }
+
+/* ── Table Card ───────────────────────────────── */
+.rpt-card { background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 4px 20px rgba(102,126,234,.09); }
+.rpt-card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 22px; border-bottom:1px solid #f0f4ff; }
+.rpt-card-title  { font-size:14px; font-weight:700; color:#2d3748; display:flex; align-items:center; gap:8px; }
+.rpt-card-count  { font-size:12px; color:#a0aec0; background:#f7fafc; border-radius:20px; padding:3px 10px; }
+.rpt-table { width:100%; border-collapse:collapse; }
+.rpt-table thead tr { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); }
+.rpt-table thead th { color:#fff; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; padding:13px 14px; border:none; white-space:nowrap; }
+.rpt-table thead th:first-child { padding-left:20px; }
+.rpt-table thead th:last-child  { padding-right:20px; }
+.rpt-table tbody tr { border-bottom:1px solid #f7fafc; transition:background .15s; }
+.rpt-table tbody tr:last-child { border-bottom:none; }
+.rpt-table tbody tr:hover { background:#f7f9ff; }
+.rpt-table tbody tr.is-overdue { background:rgba(250,112,154,.04); }
+.rpt-table tbody tr.is-overdue:hover { background:rgba(250,112,154,.08); }
+.rpt-table tbody td { padding:12px 14px; vertical-align:middle; font-size:13px; }
+.rpt-table tbody td:first-child { padding-left:20px; }
+.rpt-table tbody td:last-child  { padding-right:20px; }
+
+/* Ticket No. */
+.rpt-tnum { font-family:monospace; font-size:11px; color:#a0aec0; background:#f7fafc; border-radius:6px; padding:3px 7px; font-weight:700; }
+
+/* Title link */
+.rpt-title-link { font-size:13px; font-weight:700; color:#2d3748; text-decoration:none; }
+.rpt-title-link:hover { color:#667eea; }
+
+/* Priority & Status pills */
+.rpt-pill { display:inline-flex; align-items:center; gap:4px; border-radius:20px; padding:4px 11px; font-size:11px; font-weight:700; color:#fff; white-space:nowrap; }
+
+/* Overdue badge */
+.rpt-overdue-badge { display:inline-flex; align-items:center; gap:3px; background:linear-gradient(135deg,#fa709a,#fee140); color:#fff; border-radius:20px; padding:2px 7px; font-size:10px; font-weight:800; margin-left:5px; vertical-align:middle; }
+
+/* Due date danger */
+.rpt-due-overdue { color:#e53e3e; font-weight:700; }
+.rpt-due-ok      { color:#718096; }
+
+/* Empty state */
+.rpt-empty { text-align:center; padding:60px 20px; }
+.rpt-empty i { font-size:52px; color:#e2e8f0; display:block; margin-bottom:16px; }
+.rpt-empty h6 { font-size:15px; font-weight:600; color:#4a5568; margin-bottom:6px; }
+.rpt-empty p  { font-size:13px; color:#a0aec0; }

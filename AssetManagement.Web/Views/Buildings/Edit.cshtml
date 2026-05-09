@@ -1,0 +1,47 @@
+@model AssetManagement.Models.ViewModels.BuildingFormViewModel
+@{
+    ViewData["Title"] = $"Edit — {Model.Name}";
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/buildings-edit.css" asp-append-version="true" />
+}
+
+<div class="form-hero">
+    <a asp-action="Details" asp-route-id="@Model.Id" class="hero-back"><i class="bi bi-arrow-left"></i>Back to Details</a>
+    <p class="hero-title"><i class="bi bi-pencil me-2" style="opacity:.85"></i>Edit Building</p>
+    <p class="hero-sub">@Model.Name</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="form-card">
+            <div class="form-card-header"><i class="bi bi-building"></i>Building Information</div>
+            <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="form-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4 rounded-3"></div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="field-label"><i class="bi bi-building me-1"></i>Building Name *</label>
+                            <input asp-for="Name" class="field-input" />
+                            <span asp-validation-for="Name" class="field-error"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="field-label"><i class="bi bi-geo-alt me-1"></i>Address</label>
+                            <textarea asp-for="Address" class="field-textarea" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="field-label"><i class="bi bi-layers me-1"></i>Number of Floors</label>
+                            <input asp-for="FloorsCount" type="number" min="0" class="field-input" />
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn-cancel"><i class="bi bi-x-lg"></i>Cancel</a>
+                    <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

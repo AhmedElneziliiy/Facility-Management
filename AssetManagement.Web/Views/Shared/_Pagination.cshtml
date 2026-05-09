@@ -1,0 +1,62 @@
+@model AssetManagement.Models.ViewModels.PaginationModel
+
+@if (Model.TotalPages >= 1)
+{
+    var sep = Model.BaseUrl.Contains('?') ? "&" : "?";
+
+    string PageUrl(int p) => $"{Model.BaseUrl}{sep}page={p}";
+
+    // Compute visible page numbers with ellipsis logic
+    var pages = new List<int?>();
+    if (Model.TotalPages <= 7)
+    {
+        for (int i = 1; i <= Model.TotalPages; i++) pages.Add(i);
+    }
+    else
+    {
+        pages.Add(1);
+        if (Model.Page > 4) pages.Add(null); // left ellipsis
+
+        int start = Math.Max(2, Model.Page - 2);
+        int end   = Math.Min(Model.TotalPages - 1, Model.Page + 2);
+        for (int i = start; i <= end; i++) pages.Add(i);
+
+        if (Model.Page < Model.TotalPages - 3) pages.Add(null); // right ellipsis
+        pages.Add(Model.TotalPages);
+    }
+
+    <nav aria-label="Page navigation" class="mt-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 px-1">
+            <small class="text-muted">Page @Model.Page of @Model.TotalPages</small>
+            <ul class="pagination mb-0">
+
+                <li class="page-item @(!Model.HasPrev ? "disabled" : "")">
+                    <a class="page-link" href="@(Model.HasPrev ? PageUrl(Model.Page - 1) : "#")" aria-label="Previous">
+                        <i class="bi bi-chevron-left" style="font-size:11px"></i>
+                    </a>
+                </li>
+
+                @foreach (int? p in pages)
+                {
+                    if (p is null)
+                    {
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    }
+                    else
+                    {
+                        <li class="page-item @(p == Model.Page ? "active" : "")">
+                            <a class="page-link" href="@PageUrl(p.Value)">@p</a>
+                        </li>
+                    }
+                }
+
+                <li class="page-item @(!Model.HasNext ? "disabled" : "")">
+                    <a class="page-link" href="@(Model.HasNext ? PageUrl(Model.Page + 1) : "#")" aria-label="Next">
+                        <i class="bi bi-chevron-right" style="font-size:11px"></i>
+                    </a>
+                </li>
+
+            </ul>
+        </div>
+    </nav>
+}

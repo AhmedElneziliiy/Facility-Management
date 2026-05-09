@@ -1,0 +1,422 @@
+@model TicketDetailsViewModel
+@{
+    ViewData["Title"] = Model.Ticket.TicketNumber;
+    var t = Model.Ticket;
+
+    string PriorityColor(string p) => p.ToLower() switch {
+        "critical" => "linear-gradient(135deg,#fa709a,#fee140)",
+        "urgent"   => "linear-gradient(135deg,#f093fb,#f5576c)",
+        "normal"   => "linear-gradient(135deg,#667eea,#764ba2)",
+        _          => "linear-gradient(135deg,#11998e,#38ef7d)"
+    };
+
+    string StatusColor(string s) => s.ToLower() switch {
+        "open"        => "#667eea",
+        "in_progress" => "#f39c12",
+        "closed"      => "#11998e",
+        _             => "#a0aec0"
+    };
+
+    string EventIcon(string e) => e.ToLower() switch {
+        "created"        => "bi-plus-circle-fill",
+        "status_changed" => "bi-arrow-repeat",
+        "assigned"       => "bi-person-check-fill",
+        "closed"         => "bi-check-circle-fill",
+        _                => "bi-dot"
+    };
+
+    string EventColor(string e) => e.ToLower() switch {
+        "created"        => "linear-gradient(135deg,#667eea,#764ba2)",
+        "status_changed" => "linear-gradient(135deg,#4facfe,#00f2fe)",
+        "assigned"       => "linear-gradient(135deg,#f093fb,#f5576c)",
+        "closed"         => "linear-gradient(135deg,#11998e,#38ef7d)",
+        _                => "linear-gradient(135deg,#a0aec0,#718096)"
+    };
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/tickets-details.css" asp-append-version="true" />
+}
+
+<!-- Hero Banner -->
+<div class="ticket-hero">
+    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+        <div style="flex:1;min-width:0">
+            <a asp-action="Index" style="font-size:12px;color:rgba(255,255,255,.75);text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-bottom:10px;position:relative;z-index:1">
+                <i class="bi bi-arrow-left"></i>Back to Tickets
+            </a>
+            <div class="ticket-number"><i class="bi bi-ticket-detailed me-1"></i>@t.TicketNumber</div>
+            <h4>@t.Title</h4>
+            <div class="hero-meta">
+                <span>
+                    <i class="bi bi-circle-fill" style="font-size:7px"></i>
+                    @t.Status.Replace("_"," ").ToUpper()
+                </span>
+                <span><i class="bi bi-exclamation-diamond"></i>@t.Priority.ToUpper()</span>
+                <span><i class="bi bi-building"></i>@t.BuildingName</span>
+                @if (t.IsOverdue)
+                {
+                    <span style="background:rgba(245,87,108,0.5)"><i class="bi bi-alarm"></i>OVERDUE</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (t.Status != "closed")
+    {
+        <div class="hero-actions">
+            <button class="btn-hero btn-hero-outline" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
+                <i class="bi bi-arrow-repeat"></i> Update Status / Assign
+            </button>
+            <button class="btn-hero btn-hero-success" data-bs-toggle="modal" data-bs-target="#closeTicketModal">
+                <i class="bi bi-check-circle"></i> Close Ticket
+            </button>
+        </div>
+    }
+</div>
+
+<div class="row g-4">
+
+    <!-- LEFT COLUMN -->
+    <div class="col-lg-8">
+
+        <!-- Key Info Grid -->
+        <div class="detail-card">
+            <div class="detail-card-header">
+                <div class="header-icon" style="background:linear-gradient(135deg,#667eea,#764ba2)"><i class="bi bi-info-circle"></i></div>
+                Ticket Information
+            </div>
+            <div class="info-grid">
+                <div class="info-row">
+                    <span class="lbl">Status</span>
+                    <span class="val">
+                        <span class="status-pill" style="background:@StatusColor(t.Status)">@t.Status.Replace("_"," ")</span>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="lbl">Priority</span>
+                    <span class="val">
+                        <span class="badge" style="background:@PriorityColor(t.Priority);color:#fff;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700">@t.Priority</span>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="lbl">Created</span>
+                    <span class="val">@t.CreatedAt.ToString("MMM d, yyyy — HH:mm")</span>
+                </div>
+                <div class="info-row">
+                    <span class="lbl">Due By (SLA @t.SLAHours h)</span>
+                    <span class="val @(t.IsOverdue ? "text-danger" : "")">
+                        @t.DueAt.ToString("MMM d, yyyy — HH:mm")
+                        @if (t.IsOverdue) { <i class="bi bi-exclamation-circle ms-1 text-danger"></i> }
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="lbl">Created By</span>
+                    <span class="val">
+                        <i class="bi bi-person-circle me-1 text-muted"></i>@t.CreatedByUserName
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="lbl">Assigned To</span>
+                    <span class="val">
+                        @if (!string.IsNullOrEmpty(t.AssignedToUserName))
+                        {
+                            <span><i class="bi bi-person-check me-1" style="color:#667eea"></i>@t.AssignedToUserName</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted fw-normal">Not assigned</span>
+                        }
+                    </span>
+                </div>
+                @if (!string.IsNullOrEmpty(t.AssignedVendorName))
+                {
+                    <div class="info-row">
+                        <span class="lbl">Vendor</span>
+                        <span class="val"><i class="bi bi-building me-1" style="color:#764ba2"></i>@t.AssignedVendorName</span>
+                    </div>
+                }
+                @if (t.ClosedAt.HasValue)
+                {
+                    <div class="info-row">
+                        <span class="lbl">Closed At</span>
+                        <span class="val" style="color:#11998e"><i class="bi bi-check-circle me-1"></i>@t.ClosedAt.Value.ToString("MMM d, yyyy — HH:mm")</span>
+                    </div>
+                }
+                @if (t.TimeSpentMinutes.HasValue)
+                {
+                    <div class="info-row">
+                        <span class="lbl">Time Spent</span>
+                        <span class="val">@(t.TimeSpentMinutes / 60)h @(t.TimeSpentMinutes % 60)m</span>
+                    </div>
+                }
+                @if (t.ActualCost.HasValue)
+                {
+                    <div class="info-row">
+                        <span class="lbl">Actual Cost</span>
+                        <span class="val">$@t.ActualCost.Value.ToString("F2")</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Description -->
+        @if (!string.IsNullOrEmpty(t.Description))
+        {
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <div class="header-icon" style="background:linear-gradient(135deg,#4facfe,#00f2fe)"><i class="bi bi-text-left"></i></div>
+                    Description
+                </div>
+                <div class="detail-card-body">
+                    <p class="mb-0" style="color:#4a5568;line-height:1.7;font-size:14px">@t.Description</p>
+                </div>
+            </div>
+        }
+
+        <!-- Resolution Notes -->
+        @if (!string.IsNullOrEmpty(t.ResolutionNotes))
+        {
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <div class="header-icon" style="background:linear-gradient(135deg,#11998e,#38ef7d)"><i class="bi bi-patch-check"></i></div>
+                    Resolution Notes
+                    @if (!string.IsNullOrEmpty(t.ResolutionByUserName))
+                    {
+                        <span class="ms-auto small fw-normal text-muted">by @t.ResolutionByUserName</span>
+                    }
+                </div>
+                <div class="detail-card-body">
+                    <p class="mb-0" style="color:#4a5568;line-height:1.7;font-size:14px">@t.ResolutionNotes</p>
+                </div>
+            </div>
+        }
+
+        <!-- Asset Info -->
+        @if (t.AssetSnapshot != null)
+        {
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <div class="header-icon" style="background:linear-gradient(135deg,#f093fb,#f5576c)"><i class="bi bi-cpu"></i></div>
+                    Asset Details
+                </div>
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="lbl">Asset Name</span>
+                        <span class="val">@t.AssetSnapshot.Name</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="lbl">Criticality</span>
+                        <span class="val">
+                            <span class="badge badge-priority-@t.AssetSnapshot.Criticality.ToLower()">@t.AssetSnapshot.Criticality</span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="lbl">Building</span>
+                        <span class="val">@t.AssetSnapshot.BuildingName</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="lbl">Floor</span>
+                        <span class="val">@(t.AssetSnapshot.FloorLevel.HasValue ? $"Floor {t.AssetSnapshot.FloorLevel}" : "—")</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(t.AssetSnapshot.SerialNumber))
+                    {
+                        <div class="info-row" style="grid-column:span 2">
+                            <span class="lbl">Serial Number</span>
+                            <span class="val font-monospace">@t.AssetSnapshot.SerialNumber</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Attachments -->
+        @if (t.Attachments.Any())
+        {
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <div class="header-icon" style="background:linear-gradient(135deg,#fa709a,#fee140)"><i class="bi bi-paperclip"></i></div>
+                    Attachments
+                    <span class="ms-auto badge" style="background:rgba(102,126,234,0.12);color:#667eea;font-size:11px">@t.Attachments.Count file(s)</span>
+                </div>
+                <div class="detail-card-body">
+                    <div class="row g-2">
+                        @foreach (var a in t.Attachments)
+                        {
+                            <div class="col-sm-6 col-lg-4">
+                                <a href="@a.Url" target="_blank" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none"
+                                   style="background:#f7fafc;border:1px solid #e2e8f0;transition:all .2s"
+                                   onmouseover="this.style.borderColor='#667eea'" onmouseout="this.style.borderColor='#e2e8f0'">
+                                    @if (a.ContentType?.StartsWith("image/") == true)
+                                    {
+                                        <i class="bi bi-file-image fs-5" style="color:#4facfe"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-file-earmark fs-5" style="color:#a0aec0"></i>
+                                    }
+                                    <div class="overflow-hidden">
+                                        <div class="small fw-semibold text-truncate" style="color:#2d3748">@a.Filename</div>
+                                        <div style="font-size:.7rem;color:#a0aec0">@((a.SizeBytes / 1024.0).ToString("F0")) KB</div>
+                                    </div>
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+
+    <!-- RIGHT COLUMN — Timeline -->
+    <div class="col-lg-4">
+        <div class="detail-card" style="position:sticky;top:20px">
+            <div class="detail-card-header">
+                <div class="header-icon" style="background:linear-gradient(135deg,#667eea,#764ba2)"><i class="bi bi-clock-history"></i></div>
+                Activity Timeline
+                <span class="ms-auto badge" style="background:rgba(102,126,234,0.12);color:#667eea;font-size:11px">@t.History.Count events</span>
+            </div>
+            <div class="detail-card-body" style="max-height:600px;overflow-y:auto">
+                @if (t.History.Any())
+                {
+                    <div class="timeline-modern">
+                        @foreach (var h in t.History.OrderByDescending(x => x.CreatedAt))
+                        {
+                            <div class="tl-item">
+                                <div class="tl-icon" style="background:@EventColor(h.EventType)">
+                                    <i class="bi @EventIcon(h.EventType)"></i>
+                                </div>
+                                <div class="tl-content">
+                                    <div class="tl-event">@h.EventType.Replace("_", " ")</div>
+                                    @if (!string.IsNullOrEmpty(h.Details))
+                                    {
+                                        <div class="tl-detail">@h.Details</div>
+                                    }
+                                    <div class="tl-meta">
+                                        <i class="bi bi-clock me-1"></i>@h.CreatedAt.ToString("MMM d, yyyy · HH:mm")
+                                        @if (!string.IsNullOrEmpty(h.CreatedByUserName))
+                                        {
+                                            <span> · <i class="bi bi-person me-1"></i>@h.CreatedByUserName</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-clock-history fs-2 d-block mb-2 opacity-25"></i>
+                        <span class="text-muted small">No history yet.</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== Update Status Modal ===== -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="/Tickets/UpdateStatus/@t.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title mb-0"><i class="bi bi-arrow-repeat me-2"></i>Update Ticket</h5>
+                        <small class="opacity-75">@t.TicketNumber — @t.Title</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label class="modal-label">Status</label>
+                        <select name="Status" class="form-select" required>
+                            @foreach (var opt in new[] { ("open","Open"), ("in_progress","In Progress") })
+                            {
+                                if (t.Status == opt.Item1)
+                                { <option value="@opt.Item1" selected>@opt.Item2</option> }
+                                else
+                                { <option value="@opt.Item1">@opt.Item2</option> }
+                            }
+                        </select>
+                        <div class="form-text text-muted small mt-1">Keep the current status to only update assignments.</div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="modal-label">Assign To</label>
+                        <select name="AssignedToUserId" class="form-select">
+                            <option value="">— Unassigned —</option>
+                            @foreach (var u in Model.FacilitiesUsers)
+                            {
+                                if (t.AssignedToUserId == u.Id)
+                                { <option value="@u.Id" selected>@u.FullName</option> }
+                                else
+                                { <option value="@u.Id">@u.FullName</option> }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="modal-label">Vendor</label>
+                        <select name="AssignedVendorId" class="form-select">
+                            <option value="">— No Vendor —</option>
+                            @foreach (var v in Model.Vendors)
+                            {
+                                if (t.AssignedVendorId == v.Id)
+                                { <option value="@v.Id" selected>@v.Name</option> }
+                                else
+                                { <option value="@v.Id">@v.Name</option> }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+                        <i class="bi bi-check-lg"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Close Ticket Modal ===== -->
+<div class="modal fade" id="closeTicketModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="/Tickets/Close/@t.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header" style="background:linear-gradient(135deg,#11998e,#38ef7d)">
+                    <div>
+                        <h5 class="modal-title mb-0"><i class="bi bi-check-circle me-2"></i>Close Ticket</h5>
+                        <small class="opacity-75">@t.TicketNumber — @t.Title</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label class="modal-label">Resolution Notes <span class="text-danger">*</span></label>
+                        <textarea name="ResolutionNotes" class="form-control" rows="4"
+                                  placeholder="Describe how the issue was resolved..." required
+                                  style="border-radius:10px;border:2px solid #e2e8f0;resize:none"></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="modal-label">Actual Cost ($) — optional</label>
+                        <input type="number" name="ActualCost" class="form-control" min="0" step="0.01"
+                               placeholder="e.g. 150.00"
+                               style="border-radius:10px;border:2px solid #e2e8f0" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" style="background:linear-gradient(135deg,#11998e,#38ef7d);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+                        <i class="bi bi-check-circle"></i>Close Ticket
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

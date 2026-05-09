@@ -1,0 +1,53 @@
+@model AssetManagement.Models.ViewModels.FloorFormViewModel
+@{
+    ViewData["Title"] = $"Edit Floor {Model.Level}";
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/floors-form.css" asp-append-version="true" />
+}
+
+<div class="form-hero">
+    <a asp-controller="Buildings" asp-action="Details" asp-route-id="@Model.BuildingId" class="hero-back">
+        <i class="bi bi-arrow-left"></i>Back to @Model.BuildingName
+    </a>
+    <p class="hero-title"><i class="bi bi-pencil me-2" style="opacity:.85"></i>Edit Floor</p>
+    <p class="hero-sub">Floor @Model.Level — @Model.BuildingName</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-5">
+        <div class="form-card">
+            <div class="form-card-header"><i class="bi bi-layers"></i>Floor Details</div>
+            <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="BuildingId" />
+                <input type="hidden" asp-for="BuildingName" />
+                <div class="form-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4 rounded-3"></div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="field-label"><i class="bi bi-building me-1"></i>Building</label>
+                            <input type="text" class="field-input" value="@Model.BuildingName" disabled />
+                        </div>
+                        <div class="col-12">
+                            <label class="field-label"><i class="bi bi-hash me-1"></i>Floor Level *</label>
+                            <input asp-for="Level" type="number" class="field-input" />
+                            <span asp-validation-for="Level" class="field-error"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="field-label"><i class="bi bi-tag me-1"></i>Floor Name <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+                            <input asp-for="Name" class="field-input" placeholder="e.g. Lobby, Mechanical, Executive" />
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <a asp-controller="Buildings" asp-action="Details" asp-route-id="@Model.BuildingId" class="btn-cancel">
+                        <i class="bi bi-x-lg"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

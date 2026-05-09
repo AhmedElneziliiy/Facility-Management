@@ -1,0 +1,447 @@
+@using AssetManagement.Models.Entities
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var s    = Model.Stats;
+    var now  = DateTime.Now;
+
+    // SLA ring colour
+    string SlaColor() => s.SLACompliancePercent >= 80 ? "#11998e" : s.SLACompliancePercent >= 50 ? "#f39c12" : "#f5576c";
+
+    string PriorityGrad(string p) => p.ToLower() switch {
+        "critical" => "linear-gradient(135deg,#fa709a,#fee140)",
+        "urgent"   => "linear-gradient(135deg,#f093fb,#f5576c)",
+        "normal"   => "linear-gradient(135deg,#4facfe,#00f2fe)",
+        _          => "linear-gradient(135deg,#11998e,#38ef7d)"
+    };
+    string StatusGrad(string st) => st.ToLower() switch {
+        "open"        => "linear-gradient(135deg,#667eea,#764ba2)",
+        "in_progress" => "linear-gradient(135deg,#f093fb,#f5576c)",
+        "closed"      => "linear-gradient(135deg,#11998e,#38ef7d)",
+        _             => "linear-gradient(135deg,#a0aec0,#718096)"
+    };
+    string StatusIcon(string st) => st.ToLower() switch {
+        "open"        => "bi-circle",
+        "in_progress" => "bi-arrow-repeat",
+        "closed"      => "bi-check-circle-fill",
+        _             => "bi-question-circle"
+    };
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/dashboard.css" asp-append-version="true" />
+}
+
+<!-- ═══════════════════ HERO ═══ -->
+<div class="dash-hero">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3" style="position:relative;z-index:1">
+        <div>
+            <p class="hero-title">
+                <i class="bi bi-grid-1x2-fill me-2" style="opacity:.85"></i>Welcome back, @User.Identity?.Name
+            </p>
+            <p class="hero-sub">@now.ToString("dddd, MMMM d, yyyy") &mdash; Facility Management Overview</p>
+        </div>
+        <a asp-controller="Tickets" asp-action="Create" class="hero-btn">
+            <i class="bi bi-plus-lg"></i>New Ticket
+        </a>
+    </div>
+
+    <!-- Building Filter Tabs -->
+    <div class="building-tabs">
+        <a href="@Url.Action("Index", "Dashboard")"
+           class="btab @(Model.SelectedBuildingId == null ? "active" : "")">
+            <i class="bi bi-globe me-1"></i>All Buildings
+        </a>
+        @foreach (var b in Model.Buildings)
+        {
+            <a href="@Url.Action("Index", "Dashboard", new { buildingId = b.Id })"
+               class="btab @(Model.SelectedBuildingId == b.Id ? "active" : "")">
+                <i class="bi bi-building me-1"></i>@b.Name
+            </a>
+        }
+    </div>
+</div>
+
+<!-- ═══════════════════ KPI CARDS ═══ -->
+<div class="kpi-grid">
+
+    <!-- Total Tickets -->
+    <div class="kpi-card purple">
+        <div class="kpi-top">
+            <div class="kpi-icon" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+                <i class="bi bi-ticket-detailed"></i>
+            </div>
+            <span class="kpi-badge" style="background:#eef2ff;color:#667eea">All Time</span>
+        </div>
+        <div class="kpi-value" data-count="@s.TotalTickets">@s.TotalTickets</div>
+        <div class="kpi-label">Total Tickets</div>
+        <div class="kpi-sub">
+            <i class="bi bi-circle me-1" style="color:#667eea"></i>@s.OpenTickets open &nbsp;·&nbsp;
+            <i class="bi bi-arrow-repeat me-1" style="color:#f39c12"></i>@s.InProgressTickets in progress
+        </div>
+    </div>
+
+    <!-- Resolved This Month -->
+    <div class="kpi-card teal">
+        <div class="kpi-top">
+            <div class="kpi-icon" style="background:linear-gradient(135deg,#11998e,#38ef7d)">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+            <span class="kpi-badge" style="background:#e6fff8;color:#11998e">This Month</span>
+        </div>
+        <div class="kpi-value" data-count="@s.ResolvedThisMonth">@s.ResolvedThisMonth</div>
+        <div class="kpi-label">Tickets Resolved</div>
+        <div class="kpi-sub">
+            <i class="bi bi-plus-circle me-1" style="color:#11998e"></i>@s.CreatedThisMonth created this month
+        </div>
+    </div>
+
+    <!-- Critical Open -->
+    <div class="kpi-card red">
+        <div class="kpi-top">
+            <div class="kpi-icon" style="background:linear-gradient(135deg,#fa709a,#fee140)">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <span class="kpi-badge" style="background:#fff5f5;color:#f5576c">Urgent</span>
+        </div>
+        <div class="kpi-value" data-count="@s.CriticalTickets">@s.CriticalTickets</div>
+        <div class="kpi-label">Critical Open</div>
+        <div class="kpi-sub">
+            <i class="bi bi-clock-history me-1" style="color:#f5576c"></i>@s.OverdueTickets ticket(s) overdue
+        </div>
+    </div>
+
+    <!-- Avg Resolution -->
+    <div class="kpi-card amber">
+        <div class="kpi-top">
+            <div class="kpi-icon" style="background:linear-gradient(135deg,#f093fb,#f5576c)">
+                <i class="bi bi-stopwatch"></i>
+            </div>
+            <span class="kpi-badge" style="background:#fff5fb;color:#f093fb">Perf</span>
+        </div>
+        <div class="kpi-value">@((s.AvgResolutionTimeMinutes / 60.0).ToString("F1"))h</div>
+        <div class="kpi-label">Avg Resolution Time</div>
+        <div class="kpi-sub">
+            <i class="bi bi-graph-up me-1" style="color:#f093fb"></i>Based on @s.ClosedTickets closed ticket(s)
+        </div>
+    </div>
+
+    <!-- SLA Compliance -->
+    <div class="kpi-card blue">
+        <div class="kpi-top">
+            <div class="kpi-icon" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <span class="kpi-badge" style="background:#eff9ff;color:#4facfe">SLA</span>
+        </div>
+        <div class="kpi-value">@s.SLACompliancePercent<span style="font-size:16px;font-weight:600;color:#a0aec0">%</span></div>
+        <div class="kpi-label">SLA Compliance</div>
+        <div class="kpi-sub">
+            <i class="bi bi-check-circle me-1" style="color:#4facfe"></i>Tickets closed within SLA window
+        </div>
+    </div>
+
+    <!-- Total Assets -->
+    <div class="kpi-card violet">
+        <div class="kpi-top">
+            <div class="kpi-icon" style="background:linear-gradient(135deg,#764ba2,#667eea)">
+                <i class="bi bi-cpu"></i>
+            </div>
+            <span class="kpi-badge" style="background:#f5f3ff;color:#764ba2">Assets</span>
+        </div>
+        <div class="kpi-value" data-count="@s.TotalAssets">@s.TotalAssets</div>
+        <div class="kpi-label">Total Assets</div>
+        <div class="kpi-sub">
+            <i class="bi bi-check2 me-1" style="color:#764ba2"></i>@s.AssetsOperational operational &nbsp;·&nbsp; @s.AssetsUnderMaintenance in maint.
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════ THIS MONTH STRIP ═══ -->
+<div class="month-strip mb-4">
+    <div class="month-card">
+        <span class="mc-icon" style="color:#667eea"><i class="bi bi-calendar-plus"></i></span>
+        <div class="mc-num" data-count="@s.CreatedThisMonth">@s.CreatedThisMonth</div>
+        <div class="mc-label">Created this month</div>
+    </div>
+    <div class="month-card">
+        <span class="mc-icon" style="color:#11998e"><i class="bi bi-calendar-check"></i></span>
+        <div class="mc-num" data-count="@s.ResolvedThisMonth">@s.ResolvedThisMonth</div>
+        <div class="mc-label">Resolved this month</div>
+    </div>
+    <div class="month-card">
+        <span class="mc-icon" style="color:#f5576c"><i class="bi bi-calendar-x"></i></span>
+        <div class="mc-num" data-count="@s.OverdueThisMonth">@s.OverdueThisMonth</div>
+        <div class="mc-label">Overdue this month</div>
+    </div>
+</div>
+
+<!-- ═══════════════════ ROW 1: TREND + DONUTS ═══ -->
+<div class="row g-3 mb-3">
+
+    <!-- 7-day Trend Line (larger) -->
+    <div class="col-lg-8">
+        <div class="chart-card h-100">
+            <div class="chart-card-header">
+                <div>
+                    <div class="chart-card-title"><i class="bi bi-graph-up me-2" style="color:#667eea"></i>7-Day Activity Trend</div>
+                    <div class="chart-card-sub">Tickets created vs resolved in the last 7 days</div>
+                </div>
+            </div>
+            <div class="chart-body" style="height:260px">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Donut -->
+    <div class="col-lg-4">
+        <div class="chart-card h-100">
+            <div class="chart-card-header">
+                <div>
+                    <div class="chart-card-title"><i class="bi bi-pie-chart-fill me-2" style="color:#667eea"></i>By Status</div>
+                    <div class="chart-card-sub">Current ticket distribution</div>
+                </div>
+            </div>
+            <div class="chart-body d-flex align-items-center justify-content-center" style="height:260px">
+                <canvas id="statusChart" width="220" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════ ROW 2: MONTHLY + PRIORITY + SLA ═══ -->
+<div class="row g-3 mb-3">
+
+    <!-- Monthly Created vs Resolved -->
+    <div class="col-lg-5">
+        <div class="chart-card h-100">
+            <div class="chart-card-header">
+                <div>
+                    <div class="chart-card-title"><i class="bi bi-bar-chart-fill me-2" style="color:#667eea"></i>Monthly Overview</div>
+                    <div class="chart-card-sub">Created vs resolved — last 6 months</div>
+                </div>
+            </div>
+            <div class="chart-body" style="height:240px">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Priority Donut -->
+    <div class="col-lg-4">
+        <div class="chart-card h-100">
+            <div class="chart-card-header">
+                <div>
+                    <div class="chart-card-title"><i class="bi bi-exclamation-diamond-fill me-2" style="color:#667eea"></i>By Priority</div>
+                    <div class="chart-card-sub">All tickets breakdown</div>
+                </div>
+            </div>
+            <div class="chart-body d-flex align-items-center justify-content-center" style="height:240px">
+                <canvas id="priorityChart" width="200" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLA Ring + Quick Stats -->
+    <div class="col-lg-3">
+        <div class="chart-card h-100">
+            <div class="chart-card-header">
+                <div>
+                    <div class="chart-card-title"><i class="bi bi-shield-fill-check me-2" style="color:#667eea"></i>SLA Health</div>
+                </div>
+            </div>
+            <div class="chart-body d-flex flex-column align-items-center justify-content-center" style="height:240px;gap:12px">
+                @{
+                    var slaColor    = SlaColor();
+                    var circumference = 2 * Math.PI * 50;
+                    var offset       = circumference * (1 - s.SLACompliancePercent / 100.0);
+                }
+                <div class="sla-ring-wrap">
+                    <svg width="120" height="120" viewBox="0 0 120 120">
+                        <circle class="sla-ring-bg" cx="60" cy="60" r="50"/>
+                        <circle class="sla-ring-fill"
+                                cx="60" cy="60" r="50"
+                                stroke="@slaColor"
+                                stroke-dasharray="@circumference.ToString("F1")"
+                                stroke-dashoffset="@offset.ToString("F1")"/>
+                    </svg>
+                    <div class="sla-value">@((int)s.SLACompliancePercent)%</div>
+                </div>
+                <div style="width:100%">
+                    @{
+                        var items = new[] {
+                            ("Open",        s.OpenTickets,       "#667eea"),
+                            ("In Progress", s.InProgressTickets, "#f39c12"),
+                            ("Closed",      s.ClosedTickets,     "#11998e"),
+                            ("Overdue",     s.OverdueTickets,    "#f5576c"),
+                        };
+                    }
+                    @foreach (var (label, count, color) in items)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-1" style="font-size:12px">
+                            <span style="color:#718096"><span style="width:8px;height:8px;border-radius:50%;background:@color;display:inline-block;margin-right:6px"></span>@label</span>
+                            <strong style="color:#2d3748">@count</strong>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════ ROW 3: BUILDING CHART ═══ -->
+<div class="row g-3 mb-3">
+    <div class="col-12">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <div>
+                    <div class="chart-card-title"><i class="bi bi-building-fill me-2" style="color:#667eea"></i>Building Performance</div>
+                    <div class="chart-card-sub">Open & critical tickets per building</div>
+                </div>
+                <div class="d-flex gap-3" style="font-size:12px;color:#a0aec0">
+                    @foreach (var b in Model.BuildingPerformance)
+                    {
+                        <div>
+                            <strong style="color:#2d3748">@b.BuildingName</strong>
+                            &nbsp;·&nbsp; @b.OpenTickets open
+                            @if (b.AvgResolutionTimeMinutes > 0)
+                            {
+                                <span>&nbsp;·&nbsp; avg @((b.AvgResolutionTimeMinutes/60.0).ToString("F1"))h</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="chart-body" style="height:@(Math.Max(160, Model.BuildingPerformance.Count * 70))px">
+                <canvas id="buildingChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════ RECENT TICKETS ═══ -->
+<div class="chart-card">
+    <div class="chart-card-header">
+        <div>
+            <div class="chart-card-title"><i class="bi bi-list-ul me-2" style="color:#667eea"></i>Recent Tickets</div>
+            <div class="chart-card-sub">Latest @Model.RecentTickets.Count ticket(s)</div>
+        </div>
+        <a asp-controller="Tickets" asp-action="Index" class="hero-btn" style="background:linear-gradient(135deg,#667eea,#764ba2);border:none;font-size:12px;padding:7px 16px">
+            View All <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+    <div class="chart-body-flush">
+        <div class="table-responsive">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Location</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Due</th>
+                        <th>Assigned To</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.RecentTickets)
+                    {
+                        var priGrad  = PriorityGrad(t.Priority);
+                        var statGrad = StatusGrad(t.Status);
+                        var statIcon = StatusIcon(t.Status);
+                        var initials = t.AssignedToUserName != null
+                            ? string.Concat(t.AssignedToUserName.Split(' ').Where(w => w.Length > 0).Take(2).Select(w => w[0].ToString().ToUpper()))
+                            : "";
+
+                        <tr onclick="window.location.href='@Url.Action("Details", "Tickets", new { id = t.Id })'">
+                            <td><span class="tick-num">@t.TicketNumber</span></td>
+                            <td>
+                                <a class="tick-title" href="@Url.Action("Details", "Tickets", new { id = t.Id })">
+                                    @t.Title
+                                    @if (t.IsOverdue) { <span class="tick-overdue">Overdue</span> }
+                                </a>
+                                <div class="tick-asset"><i class="bi bi-cpu" style="font-size:10px"></i> @t.AssetName</div>
+                            </td>
+                            <td>
+                                <div style="font-size:12px;font-weight:600;color:#2d3748">@t.BuildingName</div>
+                                @if (t.FloorLevel.HasValue) { <div style="font-size:11px;color:#a0aec0">Floor @t.FloorLevel</div> }
+                            </td>
+                            <td>
+                                <span class="pri-pill" style="background:@priGrad">
+                                    <span style="width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.7)"></span>
+                                    @t.Priority
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-pill" style="background:@statGrad">
+                                    <i class="bi @statIcon" style="font-size:10px"></i>
+                                    @t.Status.Replace("_", " ")
+                                </span>
+                            </td>
+                            <td>
+                                <span style="font-size:12px;" class="@(t.IsOverdue ? "text-danger fw-semibold" : "text-muted")">
+                                    <i class="bi @(t.IsOverdue ? "bi-exclamation-circle" : "bi-calendar3") me-1" style="font-size:10px"></i>@t.DueAt.ToString("MMM d, yyyy")
+                                </span>
+                            </td>
+                            <td>
+                                @if (t.AssignedToUserName != null)
+                                {
+                                    <div class="d-flex align-items-center">
+                                        <span class="assignee-av">@initials</span>
+                                        <span style="font-size:12px;color:#4a5568">@t.AssignedToUserName</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="unassigned"><i class="bi bi-person-dash me-1"></i>Unassigned</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.RecentTickets.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="bi bi-ticket-detailed fs-2 d-block mb-2 opacity-25"></i>
+                                No tickets yet. Create your first one!
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="~/js/dashboard.js" asp-append-version="true"></script>
+<script>
+    initDashboardCharts({
+        priority: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+            critical = s.TicketsByPriority.Critical,
+            urgent   = s.TicketsByPriority.Urgent,
+            normal   = s.TicketsByPriority.Normal,
+            low      = s.TicketsByPriority.Low
+        })),
+        status: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+            open       = s.TicketsByStatus.Open,
+            inProgress = s.TicketsByStatus.InProgress,
+            closed     = s.TicketsByStatus.Closed
+        })),
+        trend: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            s.Last7DaysTrend.Select(d => new { label = d.Label, created = d.Created, resolved = d.Resolved })
+        )),
+        monthly: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            s.MonthlyResolution.Select(m => new { month = m.Month, created = m.Created, resolved = m.Resolved })
+        )),
+        buildings: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.BuildingPerformance.Select(b => new { name = b.BuildingName, openTickets = b.OpenTickets, criticalTickets = b.CriticalTickets })
+        ))
+    });
+</script>
+}

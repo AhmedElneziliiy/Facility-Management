@@ -1,0 +1,53 @@
+.detail-hero {
+    background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+    border-radius:16px; padding:28px 32px; color:#fff;
+    position:relative; overflow:hidden; margin-bottom:24px;
+}
+.detail-hero::before { content:''; position:absolute; top:-60px; right:-60px; width:240px; height:240px; border-radius:50%; background:rgba(255,255,255,.07); }
+.detail-hero::after  { content:''; position:absolute; bottom:-80px; left:40%; width:300px; height:300px; border-radius:50%; background:rgba(255,255,255,.05); }
+.hero-back  { font-size:12px; color:rgba(255,255,255,.75); text-decoration:none; display:inline-flex; align-items:center; gap:5px; margin-bottom:10px; position:relative; z-index:1; transition:color .2s; }
+.hero-back:hover { color:#fff; }
+.hero-avatar { width:56px; height:56px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:20px; font-weight:800; color:#fff; border:3px solid rgba(255,255,255,.35); flex-shrink:0; position:relative; z-index:1; }
+.hero-name  { font-size:22px; font-weight:800; margin:0 0 3px; position:relative; z-index:1; }
+.hero-sub   { font-size:13px; opacity:.8; margin:0 0 14px; position:relative; z-index:1; }
+.hero-chips { display:flex; gap:8px; flex-wrap:wrap; position:relative; z-index:1; }
+.hero-chip  { display:inline-flex; align-items:center; gap:5px; border-radius:20px; padding:5px 13px; font-size:12px; font-weight:700; color:#fff; }
+.hbtn { display:inline-flex; align-items:center; gap:6px; border-radius:9px; padding:9px 18px; font-size:13px; font-weight:600; text-decoration:none; cursor:pointer; border:none; transition:all .2s; }
+.hbtn-edit   { background:rgba(255,255,255,.18); color:#fff; border:1px solid rgba(255,255,255,.3); }
+.hbtn-edit:hover { background:rgba(255,255,255,.3); color:#fff; }
+.hbtn-warn   { background:rgba(253,211,77,.25); color:#fff; border:1px solid rgba(253,211,77,.4); }
+.hbtn-warn:hover { background:rgba(253,211,77,.4); color:#fff; }
+.hbtn-success{ background:rgba(56,239,125,.2); color:#fff; border:1px solid rgba(56,239,125,.4); }
+.hbtn-success:hover { background:rgba(56,239,125,.35); color:#fff; }
+.hbtn-key    { background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.2); }
+.hbtn-key:hover { background:rgba(255,255,255,.25); color:#fff; }
+.hbtn-del    { background:rgba(245,87,108,.25); color:#fff; border:1px solid rgba(245,87,108,.4); }
+.hbtn-del:hover { background:rgba(245,87,108,.45); color:#fff; }
+
+/* Detail cards */
+.det-card { background:#fff; border-radius:14px; box-shadow:0 4px 20px rgba(102,126,234,.09); margin-bottom:20px; overflow:hidden; }
+.det-card-header { display:flex; align-items:center; gap:10px; padding:16px 22px; border-bottom:1px solid #f0f4ff; font-size:14px; font-weight:700; color:#2d3748; }
+.det-card-header i { font-size:16px; color:#667eea; }
+.det-body { padding:22px; }
+.det-label { font-size:11px; font-weight:700; color:#a0aec0; text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+.det-value { font-size:14px; font-weight:600; color:#2d3748; }
+.det-item  { padding:13px 0; border-bottom:1px solid #f7fafc; }
+.det-item:last-child { border-bottom:none; }
+
+/* KPI chips */
+.kpi-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+.kpi-chip {
+    border-radius:12px; padding:18px 20px; color:#fff; position:relative; overflow:hidden;
+}
+.kpi-chip::after { content:''; position:absolute; bottom:-10px; right:-10px; width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,.1); }
+.kpi-num   { font-size:28px; font-weight:800; line-height:1; }
+.kpi-label { font-size:12px; opacity:.85; margin-top:4px; }
+.kpi-icon  { position:absolute; top:14px; right:16px; font-size:22px; opacity:.3; }
+
+/* Modal */
+.modal-content { border:none; border-radius:16px; overflow:hidden; }
+.modal-header  { background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; border:none; padding:18px 24px; }
+.modal-header .btn-close { filter:brightness(0) invert(1); }
+.modal-body    { padding:24px; }
+.modal-footer  { border-top:1px solid #f0f4ff; padding:14px 24px; }
+.modal-label   { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#718096; margin-bottom:6px; display:block; }

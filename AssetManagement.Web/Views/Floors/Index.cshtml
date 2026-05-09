@@ -1,0 +1,90 @@
+@using AssetManagement.Models.Entities
+@model List<Floor>
+@{
+    ViewData["Title"] = "Floors";
+    var grouped = Model.GroupBy(f => f.Building.Name).OrderBy(g => g.Key);
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/floors-index.css" asp-append-version="true" />
+}
+
+<!-- HERO -->
+<div class="flr-hero">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3" style="position:relative;z-index:1">
+        <div>
+            <p class="flr-hero-title"><i class="bi bi-layers me-2" style="opacity:.85"></i>Floors</p>
+            <p class="flr-hero-sub">All floors across your buildings</p>
+        </div>
+        <a asp-action="Create" class="flr-hero-action">
+            <i class="bi bi-plus-lg"></i>New Floor
+        </a>
+    </div>
+    <div class="flr-stat-chips">
+        <div class="flr-stat-chip">
+            <span class="cnum">@Model.Count</span>
+            <span style="opacity:.85">Total Floors</span>
+        </div>
+        <div class="flr-stat-chip">
+            <span class="cnum">@grouped.Count()</span>
+            <span style="opacity:.85">Buildings</span>
+        </div>
+    </div>
+</div>
+
+<!-- GROUPED BY BUILDING -->
+@if (Model.Any())
+{
+    @foreach (var group in grouped)
+    {
+        <div class="bld-group">
+            <div class="bld-group-header">
+                <div class="bld-group-icon"><i class="bi bi-building"></i></div>
+                <span class="bld-group-name">@group.Key</span>
+                <span class="bld-group-count">@group.Count() floor(s)</span>
+            </div>
+            <table class="flr-table">
+                <thead>
+                    <tr>
+                        <th>Level</th>
+                        <th>Name</th>
+                        <th>Added</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in group.OrderBy(f => f.Level))
+                    {
+                        <tr>
+                            <td><span class="flr-badge"><i class="bi bi-layers" style="font-size:10px"></i>Floor @f.Level</span></td>
+                            <td style="color:#718096;font-size:13px">@(f.Name ?? "—")</td>
+                            <td style="color:#a0aec0;font-size:12px">@f.CreatedAt.ToString("MMM d, yyyy")</td>
+                            <td>
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <a asp-action="Details" asp-route-id="@f.Id" class="act-btn act-view" title="View"><i class="bi bi-eye"></i></a>
+                                    <a asp-action="Edit" asp-route-id="@f.Id" class="act-btn act-edit" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form asp-action="Delete" asp-route-id="@f.Id" method="post" class="mb-0"
+                                          onsubmit="return confirm('Delete Floor @f.Level?')">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="act-btn act-del" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+else
+{
+    <div class="flr-empty">
+        <i class="bi bi-layers"></i>
+        <h6>No floors defined yet</h6>
+        <p>Add floors to your buildings to organize assets by location.</p>
+        <a asp-action="Create" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:9px;padding:10px 22px;font-size:13px;font-weight:700;text-decoration:none;margin-top:12px">
+            <i class="bi bi-plus-lg"></i>Add Floor
+        </a>
+    </div>
+}

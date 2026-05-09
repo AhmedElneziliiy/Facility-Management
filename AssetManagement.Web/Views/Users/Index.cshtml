@@ -1,0 +1,201 @@
+@using AssetManagement.Infrastructure.Identity
+@model AssetManagement.Models.ViewModels.PagedList<ApplicationUser>
+@{
+    ViewData["Title"] = "Users";
+
+    string RoleGrad(string r) => r.ToLower() switch {
+        "manager"     => "linear-gradient(135deg,#667eea,#764ba2)",
+        "coordinator" => "linear-gradient(135deg,#4facfe,#00f2fe)",
+        "facilities"  => "linear-gradient(135deg,#11998e,#38ef7d)",
+        _             => "linear-gradient(135deg,#a0aec0,#718096)"
+    };
+    string RoleIcon(string r) => r.ToLower() switch {
+        "manager"     => "bi-person-badge-fill",
+        "coordinator" => "bi-person-gear",
+        "facilities"  => "bi-wrench-adjustable",
+        _             => "bi-person"
+    };
+
+    var totalActive   = Model.Items.Count(u => u.IsActive);
+    var totalInactive = Model.Items.Count(u => !u.IsActive);
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/users-index.css" asp-append-version="true" />
+}
+
+<!-- ════════════ HERO ════════════ -->
+<div class="users-hero">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3" style="position:relative;z-index:1">
+        <div>
+            <p class="hero-title"><i class="bi bi-people-fill me-2" style="opacity:.85"></i>Users</p>
+            <p class="hero-sub">Manage system accounts and roles</p>
+        </div>
+        <a asp-action="Create" class="hero-action">
+            <i class="bi bi-person-plus-fill"></i>New User
+        </a>
+    </div>
+    <div class="stat-chips">
+        <div class="stat-chip">
+            <span class="cdot" style="background:#fff"></span>
+            <span class="cnum">@Model.Total</span>
+            <span style="opacity:.85">Total</span>
+        </div>
+        <div class="stat-chip">
+            <span class="cdot" style="background:#38ef7d"></span>
+            <span class="cnum">@totalActive</span>
+            <span style="opacity:.85">Active</span>
+        </div>
+        @if (totalInactive > 0)
+        {
+            <div class="stat-chip">
+                <span class="cdot" style="background:#fa709a"></span>
+                <span class="cnum">@totalInactive</span>
+                <span style="opacity:.85">Inactive</span>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ════════════ TABLE CARD ════════════ -->
+<div class="users-card">
+    <div class="users-card-header">
+        <div class="card-title">
+            <i class="bi bi-list-ul" style="color:#667eea"></i>User Directory
+        </div>
+        <span class="card-count">@Model.Total user(s)</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Member Since</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model.Items)
+                {
+                    var initials = string.Concat(u.FullName.Split(' ').Where(w => w.Length > 0).Take(2).Select(w => w[0].ToString().ToUpper()));
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="u-avatar" style="background:@RoleGrad(u.Role)">@initials</div>
+                                <div>
+                                    <a asp-action="Details" asp-route-id="@u.Id" class="u-name">@u.FullName</a>
+                                    <div class="u-username">@@@u.UserName</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="u-email">@u.Email</span></td>
+                        <td>
+                            <span class="role-pill" style="background:@RoleGrad(u.Role)">
+                                <i class="bi @RoleIcon(u.Role)" style="font-size:10px"></i>@u.Role
+                            </span>
+                        </td>
+                        <td>
+                            @if (u.IsActive)
+                            {
+                                <span class="status-dot">
+                                    <span class="sdot" style="background:#11998e"></span>
+                                    <span style="color:#11998e">Active</span>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status-dot">
+                                    <span class="sdot" style="background:#fa709a"></span>
+                                    <span style="color:#fa709a">Inactive</span>
+                                </span>
+                            }
+                        </td>
+                        <td><span class="u-date">@u.CreatedAt.ToString("MMM d, yyyy")</span></td>
+                        <td>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a asp-action="Details" asp-route-id="@u.Id" class="act-btn act-view" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@u.Id" class="act-btn act-edit" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form asp-action="ToggleActive" asp-route-id="@u.Id" method="post" class="mb-0">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="act-btn @(u.IsActive ? "act-toggle-off" : "act-toggle-on")"
+                                            title="@(u.IsActive ? "Deactivate" : "Activate")">
+                                        <i class="bi @(u.IsActive ? "bi-person-slash" : "bi-person-check")"></i>
+                                    </button>
+                                </form>
+                                <button class="act-btn act-key"
+                                        data-bs-toggle="modal" data-bs-target="#resetPwdModal"
+                                        data-user-id="@u.Id" data-user-name="@u.UserName" title="Reset Password">
+                                    <i class="bi bi-key"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Items.Any())
+                {
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-users">
+                                <i class="bi bi-people"></i>
+                                <h6>No users found</h6>
+                                <p>Create the first user account to get started.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 px-4 py-3" style="border-top:1px solid #f0f4ff">
+        <small style="font-size:12px;color:#718096">
+            @if (Model.Total == 0) { <span>No users</span> }
+            else { <span>Showing <strong>@(((Model.Page-1)*10)+1)</strong>–<strong>@(Math.Min(Model.Page*10, Model.Total))</strong> of <strong>@Model.Total</strong> user(s)</span> }
+        </small>
+        @await Html.PartialAsync("_Pagination", new AssetManagement.Models.ViewModels.PaginationModel {
+            Page = Model.Page, TotalPages = Model.TotalPages,
+            HasPrev = Model.HasPrev, HasNext = Model.HasNext,
+            BaseUrl = Url.Action("Index", "Users")!
+        })
+    </div>
+</div>
+
+<!-- ════════════ RESET PASSWORD MODAL ════════════ -->
+<div class="modal fade" id="resetPwdModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <form method="post" id="resetPwdForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <div>
+                        <h6 class="modal-title mb-0"><i class="bi bi-key me-2"></i>Reset Password</h6>
+                        <small class="opacity-75">for <span id="resetPwdUsername"></span></small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="modal-label">New Password</label>
+                    <input type="password" name="newPassword" class="form-control" placeholder="Min. 6 characters" required minlength="6" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+                        <i class="bi bi-check-lg"></i>Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="~/js/views/users-index.js" asp-append-version="true"></script>
+}

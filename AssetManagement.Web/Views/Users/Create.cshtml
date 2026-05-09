@@ -1,0 +1,92 @@
+@model CreateUserViewModel
+@{
+    ViewData["Title"] = "New User";
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/users-create.css" asp-append-version="true" />
+}
+
+<div class="form-hero">
+    <a asp-action="Index" class="hero-back"><i class="bi bi-arrow-left"></i>Back to Users</a>
+    <p class="hero-title"><i class="bi bi-person-plus-fill me-2" style="opacity:.85"></i>New User</p>
+    <p class="hero-sub">Create a new system account and assign a role</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="form-card">
+            <div class="form-card-header">
+                <i class="bi bi-person-fill"></i>Account Information
+            </div>
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="form-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4 rounded-3"></div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="field-label"><i class="bi bi-person me-1"></i>Full Name *</label>
+                            <input asp-for="FullName" class="field-input" placeholder="e.g. Ahmed Mohamed" />
+                            <span asp-validation-for="FullName" class="field-error"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="field-label"><i class="bi bi-at me-1"></i>Username *</label>
+                            <input asp-for="Username" class="field-input" placeholder="e.g. ahmed.m" />
+                            <span asp-validation-for="Username" class="field-error"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="field-label"><i class="bi bi-envelope me-1"></i>Email *</label>
+                            <input asp-for="Email" type="email" class="field-input" placeholder="e.g. ahmed@company.com" />
+                            <span asp-validation-for="Email" class="field-error"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="field-label"><i class="bi bi-lock me-1"></i>Password *</label>
+                            <div class="pw-wrap">
+                                <input asp-for="Password" type="password" class="field-input" id="pwInput" placeholder="Min. 6 characters" />
+                                <button type="button" class="pw-toggle" onclick="togglePw()"><i class="bi bi-eye" id="pwIcon"></i></button>
+                            </div>
+                            <span asp-validation-for="Password" class="field-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <label class="field-label mb-3"><i class="bi bi-shield me-1"></i>Role *</label>
+                    <div class="role-grid">
+                        <div class="role-opt r-manager">
+                            <input type="radio" name="Role" id="r_manager" value="manager" @(Model.Role == "manager" ? "checked" : "") />
+                            <label class="role-card" for="r_manager">
+                                <i class="bi bi-person-badge-fill role-icon"></i>
+                                <span class="role-name">Manager</span>
+                            </label>
+                        </div>
+                        <div class="role-opt r-coordinator">
+                            <input type="radio" name="Role" id="r_coordinator" value="coordinator" @(Model.Role == "coordinator" ? "checked" : "") />
+                            <label class="role-card" for="r_coordinator">
+                                <i class="bi bi-person-gear role-icon"></i>
+                                <span class="role-name">Coordinator</span>
+                            </label>
+                        </div>
+                        <div class="role-opt r-facilities">
+                            <input type="radio" name="Role" id="r_facilities" value="facilities" @(Model.Role == "facilities" ? "checked" : "") />
+                            <label class="role-card" for="r_facilities">
+                                <i class="bi bi-wrench-adjustable role-icon"></i>
+                                <span class="role-name">Facilities</span>
+                            </label>
+                        </div>
+                    </div>
+                    <span asp-validation-for="Role" class="field-error mt-2"></span>
+                </div>
+                <div class="form-actions">
+                    <a asp-action="Index" class="btn-cancel"><i class="bi bi-x-lg"></i>Cancel</a>
+                    <button type="submit" class="btn-save"><i class="bi bi-person-plus"></i>Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="~/js/views/users-create.js" asp-append-version="true"></script>
+}

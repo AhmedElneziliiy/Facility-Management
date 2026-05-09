@@ -1,0 +1,278 @@
+@using AssetManagement.Models.ViewModels
+@model ReportsViewModel
+@{
+    ViewData["Title"] = "Reports";
+
+    var open       = Model.Tickets.Count(t => t.Status == "open");
+    var inProgress = Model.Tickets.Count(t => t.Status == "in_progress");
+    var closed     = Model.Tickets.Count(t => t.Status == "closed");
+    var overdue    = Model.Tickets.Count(t => t.IsOverdue);
+
+    // Pagination base URL preserving filters
+    var rptParts = new List<string>();
+    if (!string.IsNullOrEmpty(Model.Filter.Status))   rptParts.Add($"status={Uri.EscapeDataString(Model.Filter.Status)}");
+    if (!string.IsNullOrEmpty(Model.Filter.Priority)) rptParts.Add($"priority={Uri.EscapeDataString(Model.Filter.Priority)}");
+    if (Model.Filter.BuildingId.HasValue)              rptParts.Add($"buildingId={Model.Filter.BuildingId}");
+    var rptBaseUrl    = "/Reports" + (rptParts.Count > 0 ? "?" + string.Join("&", rptParts) : "");
+    var rptTotalPages = Model.PageSize > 0 ? (int)Math.Ceiling((double)Model.Total / Model.PageSize) : 1;
+
+    string PriorityGrad(string p) => p.ToLower() switch {
+        "critical" => "linear-gradient(135deg,#fa709a,#fee140)",
+        "urgent"   => "linear-gradient(135deg,#f093fb,#f5576c)",
+        "normal"   => "linear-gradient(135deg,#667eea,#764ba2)",
+        "low"      => "linear-gradient(135deg,#11998e,#38ef7d)",
+        _          => "linear-gradient(135deg,#a0aec0,#718096)"
+    };
+    string StatusGrad(string s) => s.ToLower() switch {
+        "open"        => "linear-gradient(135deg,#667eea,#764ba2)",
+        "in_progress" => "linear-gradient(135deg,#f39c12,#f5a623)",
+        "closed"      => "linear-gradient(135deg,#11998e,#38ef7d)",
+        _             => "linear-gradient(135deg,#a0aec0,#718096)"
+    };
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/reports-index.css" asp-append-version="true" />
+}
+
+<!-- ════════════ HERO ════════════ -->
+<div class="rpt-hero">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3" style="position:relative;z-index:1">
+        <div>
+            <p class="rpt-hero-title"><i class="bi bi-bar-chart-fill me-2" style="opacity:.85"></i>Reports</p>
+            <p class="rpt-hero-sub">@Model.Total ticket(s) match current filters</p>
+        </div>
+        <div class="rpt-export-btns">
+            <a asp-action="ExportExcel"
+               asp-route-status="@Model.Filter.Status"
+               asp-route-priority="@Model.Filter.Priority"
+               asp-route-buildingId="@Model.Filter.BuildingId"
+               class="rpt-ebtn rpt-ebtn-excel">
+                <i class="bi bi-file-earmark-excel"></i>Excel
+            </a>
+            <a asp-action="ExportCsv"
+               asp-route-status="@Model.Filter.Status"
+               asp-route-priority="@Model.Filter.Priority"
+               asp-route-buildingId="@Model.Filter.BuildingId"
+               class="rpt-ebtn rpt-ebtn-csv">
+                <i class="bi bi-filetype-csv"></i>CSV
+            </a>
+            <a asp-action="ExportPdf"
+               asp-route-status="@Model.Filter.Status"
+               asp-route-priority="@Model.Filter.Priority"
+               asp-route-buildingId="@Model.Filter.BuildingId"
+               class="rpt-ebtn rpt-ebtn-pdf" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i>PDF
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════ KPI STRIP ════════════ -->
+<div class="rpt-kpi-strip">
+    <div class="rpt-kpi" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+        <i class="bi bi-ticket-detailed rpt-kpi-icon"></i>
+        <div class="rpt-kpi-num">@Model.Total</div>
+        <div class="rpt-kpi-label">Total Tickets</div>
+    </div>
+    <div class="rpt-kpi" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">
+        <i class="bi bi-hourglass-split rpt-kpi-icon"></i>
+        <div class="rpt-kpi-num">@(open + inProgress)</div>
+        <div class="rpt-kpi-label">Active</div>
+    </div>
+    <div class="rpt-kpi" style="background:linear-gradient(135deg,#11998e,#38ef7d)">
+        <i class="bi bi-check-circle rpt-kpi-icon"></i>
+        <div class="rpt-kpi-num">@closed</div>
+        <div class="rpt-kpi-label">Closed</div>
+    </div>
+    <div class="rpt-kpi" style="background:linear-gradient(135deg,#fa709a,#fee140)">
+        <i class="bi bi-exclamation-triangle rpt-kpi-icon"></i>
+        <div class="rpt-kpi-num">@overdue</div>
+        <div class="rpt-kpi-label">Overdue</div>
+    </div>
+</div>
+
+<!-- ════════════ FILTER CARD ════════════ -->
+<div class="rpt-filter-card">
+    <div class="rpt-filter-card-header">
+        <i class="bi bi-funnel-fill"></i>Filters
+    </div>
+    <form method="get">
+        <div class="row g-3 align-items-end">
+            <div class="col-sm-6 col-lg-3">
+                <label class="rpt-field-label"><i class="bi bi-building me-1"></i>Building</label>
+                <select name="BuildingId" class="rpt-select">
+                    <option value="">All Buildings</option>
+                    @foreach (var b in Model.Buildings)
+                    {
+                        if (Model.Filter.BuildingId == b.Id) { <option value="@b.Id" selected>@b.Name</option> }
+                        else { <option value="@b.Id">@b.Name</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label class="rpt-field-label"><i class="bi bi-circle-half me-1"></i>Status</label>
+                <select name="Status" class="rpt-select">
+                    <option value="">All Statuses</option>
+                    @foreach (var opt in new[] { ("open","Open"), ("in_progress","In Progress"), ("closed","Closed") })
+                    {
+                        if (Model.Filter.Status == opt.Item1) { <option value="@opt.Item1" selected>@opt.Item2</option> }
+                        else { <option value="@opt.Item1">@opt.Item2</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label class="rpt-field-label"><i class="bi bi-flag me-1"></i>Priority</label>
+                <select name="Priority" class="rpt-select">
+                    <option value="">All Priorities</option>
+                    @foreach (var opt in new[] { ("critical","Critical"), ("urgent","Urgent"), ("normal","Normal"), ("low","Low") })
+                    {
+                        if (Model.Filter.Priority == opt.Item1) { <option value="@opt.Item1" selected>@opt.Item2</option> }
+                        else { <option value="@opt.Item1">@opt.Item2</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-sm-auto d-flex gap-2">
+                <button type="submit" class="rpt-btn-apply">
+                    <i class="bi bi-search"></i>Apply
+                </button>
+                <a asp-action="Index" class="rpt-btn-clear">
+                    <i class="bi bi-x-lg"></i>Clear
+                </a>
+            </div>
+        </div>
+
+        @{
+            var hasFilters = !string.IsNullOrEmpty(Model.Filter.Status) || !string.IsNullOrEmpty(Model.Filter.Priority) || Model.Filter.BuildingId.HasValue;
+        }
+        @if (hasFilters)
+        {
+            <div class="rpt-filter-tags">
+                @if (!string.IsNullOrEmpty(Model.Filter.Status))
+                {
+                    var clearUrl = "/Reports?" + string.Join("&", rptParts.Where(p => !p.StartsWith("status=")));
+                    <span class="rpt-tag">
+                        <i class="bi bi-circle-half" style="font-size:10px"></i>
+                        @(Model.Filter.Status == "in_progress" ? "In Progress" : System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Model.Filter.Status))
+                        <a href="@clearUrl">×</a>
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(Model.Filter.Priority))
+                {
+                    var clearUrl = "/Reports?" + string.Join("&", rptParts.Where(p => !p.StartsWith("priority=")));
+                    <span class="rpt-tag">
+                        <i class="bi bi-flag" style="font-size:10px"></i>
+                        @System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Model.Filter.Priority)
+                        <a href="@clearUrl">×</a>
+                    </span>
+                }
+                @if (Model.Filter.BuildingId.HasValue)
+                {
+                    var bName = Model.Buildings.FirstOrDefault(b => b.Id == Model.Filter.BuildingId)?.Name ?? "Building";
+                    var clearUrl = "/Reports?" + string.Join("&", rptParts.Where(p => !p.StartsWith("buildingId=")));
+                    <span class="rpt-tag">
+                        <i class="bi bi-building" style="font-size:10px"></i>@bName
+                        <a href="@clearUrl">×</a>
+                    </span>
+                }
+            </div>
+        }
+    </form>
+</div>
+
+<!-- ════════════ TABLE CARD ════════════ -->
+<div class="rpt-card">
+    <div class="rpt-card-header">
+        <div class="rpt-card-title">
+            <i class="bi bi-table" style="color:#667eea"></i>Ticket Report
+        </div>
+        <span class="rpt-card-count">@Model.Total record(s)</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="rpt-table">
+            <thead>
+                <tr>
+                    <th>Ticket No.</th>
+                    <th>Title</th>
+                    <th>Asset</th>
+                    <th>Building / Floor</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Created By</th>
+                    <th>Assigned To</th>
+                    <th>Created</th>
+                    <th>Due</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model.Tickets)
+                {
+                    <tr class="ticket-row @(t.IsOverdue ? "is-overdue" : "")"
+                        data-url="@Url.Action("Details", "Tickets", new { id = t.Id })">
+                        <td><span class="rpt-tnum">@t.TicketNumber</span></td>
+                        <td>
+                            <a asp-controller="Tickets" asp-action="Details" asp-route-id="@t.Id"
+                               class="rpt-title-link">@t.Title</a>
+                            @if (t.IsOverdue)
+                            {
+                                <span class="rpt-overdue-badge"><i class="bi bi-exclamation-circle" style="font-size:9px"></i>Overdue</span>
+                            }
+                        </td>
+                        <td style="color:#718096">@t.AssetName</td>
+                        <td style="color:#718096">
+                            @t.BuildingName
+                            @if (t.FloorLevel.HasValue)
+                            {
+                                <span style="font-size:11px;color:#a0aec0;margin-left:4px">· F@(t.FloorLevel)</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="rpt-pill" style="background:@PriorityGrad(t.Priority)">
+                                @t.Priority
+                            </span>
+                        </td>
+                        <td>
+                            <span class="rpt-pill" style="background:@StatusGrad(t.Status)">
+                                @t.Status.Replace("_", " ")
+                            </span>
+                        </td>
+                        <td style="color:#718096;font-size:12px">@t.CreatedByUserName</td>
+                        <td style="color:#718096;font-size:12px">@(t.AssignedToUserName ?? "—")</td>
+                        <td style="color:#a0aec0;font-size:12px">@t.CreatedAt.ToString("MMM d, yyyy")</td>
+                        <td class="@(t.IsOverdue ? "rpt-due-overdue" : "rpt-due-ok")" style="font-size:12px">
+                            @t.DueAt.ToString("MMM d, HH:mm")
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Tickets.Any())
+                {
+                    <tr>
+                        <td colspan="10">
+                            <div class="rpt-empty">
+                                <i class="bi bi-bar-chart"></i>
+                                <h6>No data found</h6>
+                                <p>Try adjusting your filters to see results.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:14px 22px;border-top:1px solid #f0f4ff">
+        <small style="font-size:12px;color:#718096">
+            @if (Model.Total == 0) { <span>No records</span> }
+            else { <span>Showing <strong>@(((Model.Page-1)*Model.PageSize)+1)</strong>–<strong>@(Math.Min(Model.Page*Model.PageSize, Model.Total))</strong> of <strong>@Model.Total</strong> record(s)</span> }
+        </small>
+        @await Html.PartialAsync("_Pagination", new PaginationModel
+        {
+            Page       = Model.Page,
+            TotalPages = rptTotalPages,
+            HasPrev    = Model.Page > 1,
+            HasNext    = Model.Page < rptTotalPages,
+            BaseUrl    = rptBaseUrl
+        })
+    </div>
+</div>

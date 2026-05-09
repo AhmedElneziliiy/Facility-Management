@@ -1,0 +1,81 @@
+/* ── Hero ───────────────────────────────────────────── */
+.detail-hero {
+    background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+    border-radius:16px; padding:28px 32px; color:#fff;
+    position:relative; overflow:hidden; margin-bottom:24px;
+}
+.detail-hero::before {
+    content:''; position:absolute; top:-60px; right:-60px;
+    width:240px; height:240px; border-radius:50%;
+    background:rgba(255,255,255,.07);
+}
+.detail-hero::after {
+    content:''; position:absolute; bottom:-80px; left:40%;
+    width:300px; height:300px; border-radius:50%;
+    background:rgba(255,255,255,.05);
+}
+.hero-back { font-size:12px; color:rgba(255,255,255,.75); text-decoration:none; display:inline-flex; align-items:center; gap:5px; margin-bottom:10px; transition:color .2s; position:relative; z-index:1; }
+.hero-back:hover { color:#fff; }
+.hero-name { font-size:24px; font-weight:800; margin:0 0 4px; position:relative; z-index:1; }
+.hero-sub  { font-size:13px; opacity:.8; margin:0; position:relative; z-index:1; }
+.hero-actions { display:flex; gap:10px; position:relative; z-index:1; }
+.hbtn {
+    display:inline-flex; align-items:center; gap:6px;
+    border-radius:9px; padding:9px 18px; font-size:13px; font-weight:600;
+    text-decoration:none; cursor:pointer; border:none; transition:all .2s;
+}
+.hbtn-edit  { background:rgba(255,255,255,.18); color:#fff; border:1px solid rgba(255,255,255,.3); }
+.hbtn-edit:hover  { background:rgba(255,255,255,.3); color:#fff; }
+.hbtn-del   { background:rgba(245,87,108,.25); color:#fff; border:1px solid rgba(245,87,108,.4); }
+.hbtn-del:hover   { background:rgba(245,87,108,.45); color:#fff; }
+
+/* Status + criticality chips in hero */
+.hero-chips { display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; position:relative; z-index:1; }
+.hero-chip  { display:inline-flex; align-items:center; gap:6px; border-radius:20px; padding:5px 14px; font-size:12px; font-weight:700; color:#fff; }
+
+/* ── Detail Card ────────────────────────────────────── */
+.det-card {
+    background:#fff; border-radius:14px;
+    box-shadow:0 4px 20px rgba(102,126,234,.09);
+    margin-bottom:20px; overflow:hidden;
+}
+.det-card-header {
+    display:flex; align-items:center; gap:10px;
+    padding:16px 22px; border-bottom:1px solid #f0f4ff;
+    font-size:14px; font-weight:700; color:#2d3748;
+}
+.det-card-header i { font-size:16px; color:#667eea; }
+.det-body { padding:22px; }
+
+/* Detail rows */
+.det-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0; }
+.det-item { padding:14px 0; border-bottom:1px solid #f7fafc; }
+.det-item:last-child, .det-item.no-border { border-bottom:none; }
+.det-label { font-size:11px; font-weight:700; color:#a0aec0; text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+.det-value { font-size:14px; font-weight:600; color:#2d3748; }
+.det-value.mono { font-family:monospace; font-size:13px; }
+.det-value.muted { color:#718096; font-weight:400; }
+.det-pill  { display:inline-flex; align-items:center; gap:5px; border-radius:20px; padding:4px 12px; font-size:12px; font-weight:700; color:#fff; }
+.det-overdue { color:#e53e3e; font-weight:700; }
+
+/* ── QR Card ────────────────────────────────────────── */
+.qr-card {
+    background:#fff; border-radius:14px;
+    box-shadow:0 4px 20px rgba(102,126,234,.09);
+    overflow:hidden;
+}
+.qr-card-header {
+    background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+    padding:14px 20px; display:flex; align-items:center; gap:8px;
+    font-size:13px; font-weight:700; color:#fff;
+}
+.qr-body { padding:28px 20px; text-align:center; }
+.qr-code-text { font-family:monospace; font-size:16px; font-weight:800; color:#2d3748; letter-spacing:1px; margin:12px 0 4px; }
+.qr-hint { font-size:12px; color:#a0aec0; }
+.qr-print-btn {
+    margin-top:16px; display:inline-flex; align-items:center; gap:6px;
+    background:#f0f4ff; color:#667eea; border:1px solid #c3d0fb;
+    border-radius:8px; padding:7px 16px; font-size:12px; font-weight:600;
+    cursor:pointer; transition:all .2s; text-decoration:none;
+}
+.qr-print-btn:hover { background:#667eea; color:#fff; border-color:#667eea; }

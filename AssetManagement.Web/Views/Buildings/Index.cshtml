@@ -1,0 +1,86 @@
+@using AssetManagement.Models.Entities
+@model List<Building>
+@{
+    ViewData["Title"] = "Buildings";
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/buildings-index.css" asp-append-version="true" />
+}
+
+<!-- HERO -->
+<div class="bld-hero">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3" style="position:relative;z-index:1">
+        <div>
+            <p class="bld-hero-title"><i class="bi bi-buildings me-2" style="opacity:.85"></i>Buildings</p>
+            <p class="bld-hero-sub">Manage your facility locations and structures</p>
+        </div>
+        <a asp-action="Create" class="bld-hero-action">
+            <i class="bi bi-plus-lg"></i>New Building
+        </a>
+    </div>
+    <div class="bld-stat-chips">
+        <div class="bld-stat-chip">
+            <span class="cnum">@Model.Count</span>
+            <span style="opacity:.85">Buildings</span>
+        </div>
+        <div class="bld-stat-chip">
+            <span class="cnum">@Model.Sum(b => b.Floors.Count)</span>
+            <span style="opacity:.85">Total Floors</span>
+        </div>
+        <div class="bld-stat-chip">
+            <span class="cnum">@Model.Sum(b => b.Assets.Count)</span>
+            <span style="opacity:.85">Total Assets</span>
+        </div>
+    </div>
+</div>
+
+<!-- GRID -->
+@if (Model.Any())
+{
+    <div class="bld-grid">
+        @foreach (var b in Model)
+        {
+            <div class="bld-card">
+                <div class="bld-card-top">
+                    <div class="bld-icon-box"><i class="bi bi-building"></i></div>
+                    <p class="bld-name">@b.Name</p>
+                    <p class="bld-addr"><i class="bi bi-geo-alt me-1"></i>@(b.Address ?? "No address provided")</p>
+                    <div class="bld-stats-row">
+                        <div class="bld-stat">
+                            <div class="bld-stat-val">@b.Floors.Count</div>
+                            <div class="bld-stat-lbl">Floors</div>
+                        </div>
+                        <div class="bld-stat">
+                            <div class="bld-stat-val">@b.Assets.Count</div>
+                            <div class="bld-stat-lbl">Assets</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bld-card-footer">
+                    <span class="bld-date"><i class="bi bi-calendar3 me-1"></i>@b.CreatedAt.ToString("MMM d, yyyy")</span>
+                    <div class="bld-actions">
+                        <a asp-action="Details" asp-route-id="@b.Id" class="act-btn act-view" title="View"><i class="bi bi-eye"></i></a>
+                        <a asp-action="Edit" asp-route-id="@b.Id" class="act-btn act-edit" title="Edit"><i class="bi bi-pencil"></i></a>
+                        <form asp-action="Delete" asp-route-id="@b.Id" method="post" class="mb-0"
+                              onsubmit="return confirm('Delete building @b.Name? This cannot be undone.')">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="act-btn act-del" title="Delete"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="bld-empty">
+        <i class="bi bi-buildings"></i>
+        <h6>No buildings yet</h6>
+        <p>Add your first building to start managing your facilities.</p>
+        <a asp-action="Create" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:9px;padding:10px 22px;font-size:13px;font-weight:700;text-decoration:none;margin-top:12px">
+            <i class="bi bi-plus-lg"></i>Add Building
+        </a>
+    </div>
+}

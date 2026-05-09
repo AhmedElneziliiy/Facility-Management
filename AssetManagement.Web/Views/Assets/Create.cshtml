@@ -1,0 +1,170 @@
+@using AssetManagement.Models.Entities
+@model AssetManagement.Models.ViewModels.AssetFormViewModel
+@{
+    ViewData["Title"] = "New Asset";
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/assets-create.css" asp-append-version="true" />
+}
+
+<!-- ════════════ HERO ════════════ -->
+<div class="form-hero">
+    <a asp-action="Index" class="hero-back">
+        <i class="bi bi-arrow-left"></i>Back to Assets
+    </a>
+    <p class="hero-title"><i class="bi bi-plus-circle-fill me-2" style="opacity:.85"></i>New Asset</p>
+    <p class="hero-sub">Register a new asset in the facility registry</p>
+</div>
+
+<!-- ════════════ BODY ════════════ -->
+<div class="row g-4">
+
+    <!-- Form col -->
+    <div class="col-lg-8">
+        <div class="form-card">
+            <div class="form-card-header">
+                <i class="bi bi-cpu-fill"></i>Asset Information
+            </div>
+
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4 rounded-3"></div>
+
+                    <div class="row g-3">
+                        <!-- Name -->
+                        <div class="col-sm-6">
+                            <label class="field-label"><i class="bi bi-tag me-1"></i>Asset Name *</label>
+                            <input asp-for="Name" class="field-input" placeholder="e.g. HVAC Unit 1" />
+                            <span asp-validation-for="Name" class="field-error"></span>
+                        </div>
+
+                        <!-- QR Code -->
+                        <div class="col-sm-6">
+                            <label class="field-label"><i class="bi bi-qr-code me-1"></i>QR Code *</label>
+                            <div class="qr-input-wrap">
+                                <input asp-for="QRCode" class="field-input mono text-uppercase"
+                                       id="qrInput" placeholder="e.g. AST-001"
+                                       oninput="refreshQRPreview(this.value)" />
+                                <button type="button" class="qr-gen-btn" onclick="genQR()" title="Auto-generate">
+                                    <i class="bi bi-magic"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="QRCode" class="field-error"></span>
+                        </div>
+
+                        <!-- Serial Number -->
+                        <div class="col-sm-6">
+                            <label class="field-label"><i class="bi bi-upc me-1"></i>Serial Number</label>
+                            <input asp-for="SerialNumber" class="field-input mono" placeholder="Optional" />
+                        </div>
+
+                        <!-- Building -->
+                        <div class="col-sm-6">
+                            <label class="field-label"><i class="bi bi-building me-1"></i>Building *</label>
+                            <select asp-for="BuildingId" class="field-select" id="buildingSelect" onchange="loadFloors(this.value)">
+                                @foreach (var b in Model.Buildings)
+                                {
+                                    if (b.Id == Model.BuildingId) { <option value="@b.Id" selected>@b.Name</option> }
+                                    else { <option value="@b.Id">@b.Name</option> }
+                                }
+                            </select>
+                            <span asp-validation-for="BuildingId" class="field-error"></span>
+                        </div>
+
+                        <!-- Floor -->
+                        <div class="col-sm-6">
+                            <label class="field-label"><i class="bi bi-layers me-1"></i>Floor</label>
+                            <select asp-for="FloorId" class="field-select" id="floorSelect">
+                                <option value="">— No floor —</option>
+                                @foreach (var f in Model.Floors)
+                                {
+                                    var lbl = f.Name != null ? $"Floor {f.Level} – {f.Name}" : $"Floor {f.Level}";
+                                    if (f.Id == Model.FloorId) { <option value="@f.Id" selected>@lbl</option> }
+                                    else { <option value="@f.Id">@lbl</option> }
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="col-sm-6">
+                            <label class="field-label"><i class="bi bi-circle-half me-1"></i>Status *</label>
+                            <select asp-for="Status" class="field-select">
+                                @foreach (var opt in new[] { ("operational","Operational"), ("under_maintenance","Under Maintenance"), ("decommissioned","Decommissioned") })
+                                {
+                                    if (Model.Status == opt.Item1) { <option value="@opt.Item1" selected>@opt.Item2</option> }
+                                    else { <option value="@opt.Item1">@opt.Item2</option> }
+                                }
+                            </select>
+                            <span asp-validation-for="Status" class="field-error"></span>
+                        </div>
+
+                        <!-- Criticality -->
+                        <div class="col-sm-6">
+                            <label class="field-label"><i class="bi bi-exclamation-diamond me-1"></i>Criticality *</label>
+                            <select asp-for="Criticality" class="field-select">
+                                @foreach (var opt in new[] { ("critical","Critical"), ("safety","Safety"), ("operational","Operational"), ("low","Low") })
+                                {
+                                    if (Model.Criticality == opt.Item1) { <option value="@opt.Item1" selected>@opt.Item2</option> }
+                                    else { <option value="@opt.Item1">@opt.Item2</option> }
+                                }
+                            </select>
+                            <span asp-validation-for="Criticality" class="field-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <div class="row g-3">
+                        <!-- Last Serviced -->
+                        <div class="col-sm-6">
+                            <label class="field-label"><i class="bi bi-calendar-check me-1"></i>Last Serviced</label>
+                            <input asp-for="LastServicedAt" type="date" class="field-input"
+                                   value="@(Model.LastServicedAt.HasValue ? Model.LastServicedAt.Value.ToString("yyyy-MM-dd") : "")" />
+                        </div>
+
+                        <!-- Next Service Due -->
+                        <div class="col-sm-6">
+                            <label class="field-label"><i class="bi bi-calendar3 me-1"></i>Next Service Due</label>
+                            <input asp-for="NextServiceDueAt" type="date" class="field-input"
+                                   value="@(Model.NextServiceDueAt.HasValue ? Model.NextServiceDueAt.Value.ToString("yyyy-MM-dd") : "")" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="bi bi-x-lg"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn-save">
+                        <i class="bi bi-plus-lg"></i>Create Asset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- QR Preview col -->
+    <div class="col-lg-4">
+        <div class="qr-card">
+            <div class="qr-card-header">
+                <i class="bi bi-qr-code-scan"></i>QR Preview
+            </div>
+            <div class="qr-body">
+                <div id="qrPreview">
+                    <i class="bi bi-qr-code qr-empty"></i>
+                </div>
+                <div id="qrLabel" class="qr-code-text" style="color:#a0aec0">Enter a QR code</div>
+                <div class="qr-hint">Live preview · click <i class="bi bi-magic"></i> to auto-generate</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="~/js/views/assets-create.js" asp-append-version="true"></script>
+}

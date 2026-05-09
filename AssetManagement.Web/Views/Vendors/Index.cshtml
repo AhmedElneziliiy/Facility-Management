@@ -1,0 +1,115 @@
+@using AssetManagement.Models.Entities
+@model AssetManagement.Models.ViewModels.PagedList<Vendor>
+@{
+    ViewData["Title"] = "Vendors";
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/vendors-index.css" asp-append-version="true" />
+}
+
+<!-- HERO -->
+<div class="vnd-hero">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3" style="position:relative;z-index:1">
+        <div>
+            <p class="vnd-hero-title"><i class="bi bi-shop me-2" style="opacity:.85"></i>Vendors</p>
+            <p class="vnd-hero-sub">Manage service providers and contractors</p>
+        </div>
+        <a asp-action="Create" class="vnd-hero-action">
+            <i class="bi bi-plus-lg"></i>New Vendor
+        </a>
+    </div>
+    <div class="vnd-stat-chips">
+        <div class="vnd-stat-chip">
+            <span class="cnum">@Model.Total</span>
+            <span style="opacity:.85">Total Vendors</span>
+        </div>
+    </div>
+</div>
+
+<!-- TABLE CARD -->
+<div class="vnd-card">
+    <div class="vnd-card-header">
+        <div class="vnd-card-title"><i class="bi bi-list-ul" style="color:#667eea"></i>Vendor Directory</div>
+        <span class="vnd-card-count">@Model.Total vendor(s)</span>
+    </div>
+    <div class="table-responsive">
+        <table class="vnd-table">
+            <thead>
+                <tr>
+                    <th>Vendor</th>
+                    <th>Contact Person</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Added</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var v in Model.Items)
+                {
+                    var initials = v.Name.Split(' ').Where(w => w.Length > 0).Take(2).Select(w => w[0].ToString().ToUpper());
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="vnd-avatar">@string.Concat(initials)</div>
+                                <a asp-action="Details" asp-route-id="@v.Id" class="vnd-name">@v.Name</a>
+                            </div>
+                        </td>
+                        <td style="color:#718096;font-size:13px">@(v.ContactName ?? "—")</td>
+                        <td style="color:#718096;font-size:12px">@(v.ContactPhone ?? "—")</td>
+                        <td style="font-size:12px">
+                            @if (!string.IsNullOrEmpty(v.ContactEmail))
+                            { <a href="mailto:@v.ContactEmail" style="color:#667eea;text-decoration:none">@v.ContactEmail</a> }
+                            else { <span style="color:#a0aec0">—</span> }
+                        </td>
+                        <td style="color:#a0aec0;font-size:12px">@v.CreatedAt.ToString("MMM d, yyyy")</td>
+                        <td>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a asp-action="Details" asp-route-id="@v.Id" class="act-btn act-view" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@v.Id" class="act-btn act-edit" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@v.Id" method="post" class="mb-0"
+                                      onsubmit="return confirm('Delete vendor @v.Name? This cannot be undone.')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="act-btn act-del" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Items.Any())
+                {
+                    <tr>
+                        <td colspan="6">
+                            <div class="vnd-empty">
+                                <i class="bi bi-shop"></i>
+                                <h6>No vendors yet</h6>
+                                <p>Add your first vendor to get started.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:14px 22px;border-top:1px solid #f0f4ff">
+        <small style="font-size:12px;color:#718096">
+            @if (Model.Total == 0) { <span>No vendors</span> }
+            else { <span>Showing <strong>@(((Model.Page-1)*10)+1)</strong>–<strong>@(Math.Min(Model.Page*10, Model.Total))</strong> of <strong>@Model.Total</strong></span> }
+        </small>
+        @await Html.PartialAsync("_Pagination", new AssetManagement.Models.ViewModels.PaginationModel
+        {
+            Page       = Model.Page,
+            TotalPages = Model.TotalPages,
+            HasPrev    = Model.HasPrev,
+            HasNext    = Model.HasNext,
+            BaseUrl    = Url.Action("Index", "Vendors")!
+        })
+    </div>
+</div>

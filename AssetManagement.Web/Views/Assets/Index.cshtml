@@ -1,0 +1,358 @@
+@using AssetManagement.Models.DTOs.Assets
+@using AssetManagement.Models.Entities
+@using AssetManagement.Models.ViewModels
+@{
+    ViewData["Title"] = "Assets";
+    var assets      = ViewBag.Assets            as IEnumerable<AssetDto> ?? Enumerable.Empty<AssetDto>();
+    var buildings   = ViewBag.Buildings         as IEnumerable<Building> ?? Enumerable.Empty<Building>();
+    var selectedId  = ViewBag.SelectedBuildingId as Guid?;
+    var operational = (int)(ViewBag.Operational       ?? 0);
+    var underMaint  = (int)(ViewBag.UnderMaintenance  ?? 0);
+    var svcOverdue  = (int)(ViewBag.ServiceOverdue     ?? 0);
+    var total       = (int)(ViewBag.Total              ?? 0);
+    var page        = (int)(ViewBag.Page               ?? 1);
+    var totalPages  = (int)(ViewBag.TotalPages         ?? 1);
+    var hasPrev     = (bool)(ViewBag.HasPrev           ?? false);
+    var hasNext     = (bool)(ViewBag.HasNext           ?? false);
+    var filterStatus      = ViewBag.Status      as string;
+    var filterCriticality = ViewBag.Criticality as string;
+    var filterSearch      = ViewBag.Search      as string;
+    var hasFilters  = !string.IsNullOrEmpty(filterStatus) || !string.IsNullOrEmpty(filterCriticality) || !string.IsNullOrEmpty(filterSearch);
+
+    const int pageSize = 10;
+    var firstItem = total == 0 ? 0 : ((page - 1) * pageSize) + 1;
+    var lastItem  = Math.Min(page * pageSize, total);
+
+    // baseUrl preserves building + active filters (page excluded — added by _Pagination)
+    var baseUrlParams = new System.Collections.Generic.Dictionary<string, string?>();
+    if (selectedId.HasValue)          baseUrlParams["buildingId"]  = selectedId.Value.ToString();
+    if (!string.IsNullOrEmpty(filterStatus))      baseUrlParams["status"]      = filterStatus;
+    if (!string.IsNullOrEmpty(filterCriticality)) baseUrlParams["criticality"] = filterCriticality;
+    if (!string.IsNullOrEmpty(filterSearch))      baseUrlParams["search"]      = filterSearch;
+    var baseUrl = Url.Action("Index", baseUrlParams)!;
+
+    string StatusGrad(string s) => s.ToLower() switch {
+        "operational"       => "linear-gradient(135deg,#11998e,#38ef7d)",
+        "under_maintenance" => "linear-gradient(135deg,#f093fb,#f5576c)",
+        _                   => "linear-gradient(135deg,#a0aec0,#718096)"
+    };
+    string StatusIcon(string s) => s.ToLower() switch {
+        "operational"       => "bi-check-circle-fill",
+        "under_maintenance" => "bi-tools",
+        _                   => "bi-question-circle"
+    };
+    string CritGrad(string c) => c.ToLower() switch {
+        "critical"    => "linear-gradient(135deg,#fa709a,#fee140)",
+        "safety"      => "linear-gradient(135deg,#f093fb,#f5576c)",
+        "operational" => "linear-gradient(135deg,#4facfe,#00f2fe)",
+        _             => "linear-gradient(135deg,#11998e,#38ef7d)"
+    };
+    var selectedBuilding = buildings.FirstOrDefault(b => b.Id == selectedId);
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/assets-index.css" asp-append-version="true" />
+}
+
+<!-- ════════════ HERO ════════════ -->
+<div class="assets-hero">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3" style="position:relative;z-index:1">
+        <div>
+            <p class="hero-title"><i class="bi bi-cpu-fill me-2" style="opacity:.85"></i>Assets</p>
+            <p class="hero-sub">
+                @if (selectedBuilding != null)
+                { <span><i class="bi bi-building me-1"></i>@selectedBuilding.Name — @total asset(s)</span> }
+                else
+                { <span>Track and manage all facility assets</span> }
+            </p>
+        </div>
+        <a asp-action="Create" class="hero-action">
+            <i class="bi bi-plus-lg"></i>New Asset
+        </a>
+    </div>
+
+    <!-- Stat chips -->
+    <div class="stat-chips">
+        <div class="stat-chip">
+            <span class="cdot" style="background:#fff"></span>
+            <span class="cnum">@total</span>
+            <span style="opacity:.85">Total</span>
+        </div>
+        <div class="stat-chip">
+            <span class="cdot" style="background:#38ef7d"></span>
+            <span class="cnum">@operational</span>
+            <span style="opacity:.85">Operational</span>
+        </div>
+        <div class="stat-chip">
+            <span class="cdot" style="background:#f093fb"></span>
+            <span class="cnum">@underMaint</span>
+            <span style="opacity:.85">Under Maintenance</span>
+        </div>
+        @if (svcOverdue > 0)
+        {
+            <div class="stat-chip">
+                <span class="cdot" style="background:#fed7d7"></span>
+                <span class="cnum">@svcOverdue</span>
+                <span style="opacity:.85">Service Overdue</span>
+            </div>
+        }
+    </div>
+
+    <!-- Building tabs -->
+    <div class="bldg-tabs">
+        @foreach (var b in buildings)
+        {
+            <a href="@Url.Action("Index", new { buildingId = b.Id })"
+               class="btab @(selectedId == b.Id ? "active" : "")">
+                <i class="bi bi-building me-1"></i>@b.Name
+            </a>
+        }
+    </div>
+</div>
+
+<!-- ════════════ FILTERS ════════════ -->
+<form method="get" asp-action="Index" class="filter-panel">
+    @if (selectedId.HasValue)
+    {
+        <input type="hidden" name="buildingId" value="@selectedId.Value" />
+    }
+
+    <!-- Search -->
+    <div class="filter-group filter-search-wrap">
+        <label class="filter-label"><i class="bi bi-search me-1"></i>Search</label>
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" name="search" class="filter-control" placeholder="Name, QR code, serial…" value="@filterSearch" />
+    </div>
+
+    <!-- Status -->
+    <div class="filter-group">
+        <label class="filter-label"><i class="bi bi-circle-half me-1"></i>Status</label>
+        <select name="status" class="filter-control" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            @if (filterStatus == "operational") { <option value="operational" selected>Operational</option> }
+            else { <option value="operational">Operational</option> }
+            @if (filterStatus == "under_maintenance") { <option value="under_maintenance" selected>Under Maintenance</option> }
+            else { <option value="under_maintenance">Under Maintenance</option> }
+            @if (filterStatus == "decommissioned") { <option value="decommissioned" selected>Decommissioned</option> }
+            else { <option value="decommissioned">Decommissioned</option> }
+        </select>
+    </div>
+
+    <!-- Criticality -->
+    <div class="filter-group">
+        <label class="filter-label"><i class="bi bi-exclamation-diamond me-1"></i>Criticality</label>
+        <select name="criticality" class="filter-control" onchange="this.form.submit()">
+            <option value="">All Criticalities</option>
+            @if (filterCriticality == "critical") { <option value="critical" selected>Critical</option> }
+            else { <option value="critical">Critical</option> }
+            @if (filterCriticality == "safety") { <option value="safety" selected>Safety</option> }
+            else { <option value="safety">Safety</option> }
+            @if (filterCriticality == "operational") { <option value="operational" selected>Operational</option> }
+            else { <option value="operational">Operational</option> }
+            @if (filterCriticality == "low") { <option value="low" selected>Low</option> }
+            else { <option value="low">Low</option> }
+        </select>
+    </div>
+
+    <!-- Buttons -->
+    <div class="filter-group" style="min-width:auto;flex:0">
+        <label class="filter-label" style="visibility:hidden">.</label>
+        <div class="d-flex gap-2">
+            <button type="submit" class="filter-btn filter-btn-apply">
+                <i class="bi bi-funnel-fill"></i>Filter
+            </button>
+            @if (hasFilters)
+            {
+                <a href="@Url.Action("Index", new { buildingId = selectedId })" class="filter-btn filter-btn-clear">
+                    <i class="bi bi-x-lg"></i>Clear
+                </a>
+            }
+        </div>
+    </div>
+</form>
+
+@if (hasFilters)
+{
+    <div class="active-filters mb-3">
+        @if (!string.IsNullOrEmpty(filterStatus))
+        {
+            <span class="active-filter-tag">
+                <i class="bi bi-circle-half" style="font-size:10px"></i>
+                @filterStatus.Replace("_", " ")
+                <a href="@Url.Action("Index", new { buildingId = selectedId, criticality = filterCriticality, search = filterSearch })">×</a>
+            </span>
+        }
+        @if (!string.IsNullOrEmpty(filterCriticality))
+        {
+            <span class="active-filter-tag">
+                <i class="bi bi-exclamation-diamond" style="font-size:10px"></i>
+                @filterCriticality
+                <a href="@Url.Action("Index", new { buildingId = selectedId, status = filterStatus, search = filterSearch })">×</a>
+            </span>
+        }
+        @if (!string.IsNullOrEmpty(filterSearch))
+        {
+            <span class="active-filter-tag">
+                <i class="bi bi-search" style="font-size:10px"></i>
+                "@filterSearch"
+                <a href="@Url.Action("Index", new { buildingId = selectedId, status = filterStatus, criticality = filterCriticality })">×</a>
+            </span>
+        }
+    </div>
+}
+
+<!-- ════════════ TABLE CARD ════════════ -->
+<div class="assets-card">
+    <div class="assets-card-header">
+        <div class="card-title">
+            <i class="bi bi-list-ul" style="color:#667eea"></i>
+            Asset Registry
+        </div>
+        <span class="card-count">@total asset(s)</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="assets-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Floor</th>
+                    <th>Status</th>
+                    <th>Criticality</th>
+                    <th>Serial #</th>
+                    <th>Last Serviced</th>
+                    <th>Next Service</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in assets)
+                {
+                    var statGrad = StatusGrad(a.Status);
+                    var statIcon = StatusIcon(a.Status);
+                    var critGrad = CritGrad(a.Criticality);
+                    var svcDue   = a.NextServiceDueAt.HasValue && a.NextServiceDueAt.Value < DateTime.UtcNow;
+
+                    <tr>
+                        <td>
+                            <a class="asset-name" asp-action="Details" asp-route-id="@a.Id">@a.Name</a>
+                            <div class="asset-qr"><i class="bi bi-qr-code me-1"></i>@a.QRCode</div>
+                        </td>
+                        <td>
+                            @if (a.FloorLevel.HasValue)
+                            {
+                                <span class="floor-badge">
+                                    <i class="bi bi-layers" style="font-size:10px"></i>Floor @a.FloorLevel
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="svc-none">—</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="status-pill" style="background:@statGrad">
+                                <i class="bi @statIcon" style="font-size:10px"></i>
+                                @a.Status.Replace("_", " ")
+                            </span>
+                        </td>
+                        <td>
+                            <span class="crit-pill" style="background:@critGrad">
+                                @a.Criticality
+                            </span>
+                        </td>
+                        <td>
+                            @if (a.SerialNumber != null)
+                            {
+                                <span style="font-family:monospace;font-size:12px;color:#4a5568">@a.SerialNumber</span>
+                            }
+                            else
+                            {
+                                <span class="svc-none">—</span>
+                            }
+                        </td>
+                        <td>
+                            @if (a.LastServicedAt.HasValue)
+                            {
+                                <span class="svc-date svc-ok">
+                                    <i class="bi bi-calendar-check me-1" style="font-size:10px"></i>@a.LastServicedAt.Value.ToString("MMM d, yyyy")
+                                </span>
+                            }
+                            else { <span class="svc-none">Not serviced</span> }
+                        </td>
+                        <td>
+                            @if (a.NextServiceDueAt.HasValue)
+                            {
+                                <span class="svc-date @(svcDue ? "svc-overdue" : "svc-ok")">
+                                    <i class="bi @(svcDue ? "bi-exclamation-circle" : "bi-calendar3") me-1" style="font-size:10px"></i>@a.NextServiceDueAt.Value.ToString("MMM d, yyyy")
+                                    @if (svcDue) { <span style="font-size:9px;background:linear-gradient(135deg,#fa709a,#fee140);color:#fff;border-radius:8px;padding:1px 5px;margin-left:3px">Overdue</span> }
+                                </span>
+                            }
+                            else { <span class="svc-none">—</span> }
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a asp-action="Details" asp-route-id="@a.Id" class="act-btn act-view" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@a.Id" class="act-btn act-edit" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@a.Id" method="post" class="mb-0"
+                                      onsubmit="return confirm('Delete @a.Name? This cannot be undone.')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="act-btn act-del" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+                @if (!assets.Any())
+                {
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-assets">
+                                <i class="bi bi-cpu"></i>
+                                <h6>No assets found</h6>
+                                <p>
+                                    @if (selectedBuilding != null)
+                                    { <span>No assets registered for <strong>@selectedBuilding.Name</strong> yet.</span> }
+                                    else
+                                    { <span>Select a building above to view its assets.</span> }
+                                </p>
+                                <a asp-action="Create" class="btn-create">
+                                    <i class="bi bi-plus-lg"></i>Add First Asset
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination footer -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 px-4 py-3" style="border-top:1px solid #f0f4ff">
+        <small style="font-size:12px;color:#718096">
+            @if (total == 0)
+            {
+                <span>No assets</span>
+            }
+            else
+            {
+                <span>Showing <strong>@firstItem</strong>–<strong>@lastItem</strong> of <strong>@total</strong> asset(s)</span>
+            }
+        </small>
+        @await Html.PartialAsync("_Pagination", new PaginationModel
+        {
+            Page       = page,
+            TotalPages = totalPages,
+            HasPrev    = hasPrev,
+            HasNext    = hasNext,
+            BaseUrl    = baseUrl
+        })
+    </div>
+</div>

@@ -1,0 +1,303 @@
+@using AssetManagement.Models.Entities
+@model TicketListViewModel
+@{
+    ViewData["Title"] = "Tickets";
+    var buildings = ViewBag.Buildings as IEnumerable<Building> ?? Enumerable.Empty<Building>();
+
+    // Build base URL preserving filters (excluding page)
+    var fp = new List<string>();
+    if (!string.IsNullOrEmpty(Model.Filter.Status))   fp.Add($"status={Uri.EscapeDataString(Model.Filter.Status)}");
+    if (!string.IsNullOrEmpty(Model.Filter.Priority)) fp.Add($"priority={Uri.EscapeDataString(Model.Filter.Priority)}");
+    if (Model.Filter.BuildingId.HasValue)              fp.Add($"buildingId={Model.Filter.BuildingId}");
+    var baseUrl    = "/Tickets" + (fp.Count > 0 ? "?" + string.Join("&", fp) : "");
+    var totalPages = Model.PageSize > 0 ? (int)Math.Ceiling((double)Model.Total / Model.PageSize) : 1;
+
+    // Stat chip counts
+    var openCount     = Model.Tickets.Count(t => t.Status == "open");
+    var inProgCount   = Model.Tickets.Count(t => t.Status == "in_progress");
+    var overdueCount  = Model.Tickets.Count(t => t.IsOverdue);
+
+    // Helper functions
+    string PriorityGradient(string p) => p.ToLower() switch {
+        "critical" => "linear-gradient(135deg,#fa709a,#fee140)",
+        "urgent"   => "linear-gradient(135deg,#f093fb,#f5576c)",
+        "normal"   => "linear-gradient(135deg,#4facfe,#00f2fe)",
+        _          => "linear-gradient(135deg,#11998e,#38ef7d)"
+    };
+    string StatusGradient(string s) => s.ToLower() switch {
+        "open"        => "linear-gradient(135deg,#667eea,#764ba2)",
+        "in_progress" => "linear-gradient(135deg,#f093fb,#f5576c)",
+        "closed"      => "linear-gradient(135deg,#11998e,#38ef7d)",
+        _             => "linear-gradient(135deg,#a0aec0,#718096)"
+    };
+    string StatusIcon(string s) => s.ToLower() switch {
+        "open"        => "bi-circle",
+        "in_progress" => "bi-arrow-repeat",
+        "closed"      => "bi-check-circle-fill",
+        _             => "bi-question-circle"
+    };
+    string DueClass(bool overdue) => overdue ? "text-danger fw-semibold" : "text-muted";
+
+    bool hasFilters = !string.IsNullOrEmpty(Model.Filter.Status)
+                   || !string.IsNullOrEmpty(Model.Filter.Priority)
+                   || Model.Filter.BuildingId.HasValue;
+
+    int from = Model.Total == 0 ? 0 : ((Model.Page - 1) * Model.PageSize) + 1;
+    int to   = Math.Min(Model.Page * Model.PageSize, Model.Total);
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/views/tickets-index.css" asp-append-version="true" />
+}
+
+<!-- ═══════════════════════════════════════════ HERO ═══ -->
+<div class="tickets-hero">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3" style="position:relative;z-index:1">
+        <div>
+            <p class="hero-title"><i class="bi bi-ticket-detailed me-2"></i>Tickets</p>
+            <p class="hero-sub">Track, manage, and resolve maintenance requests</p>
+        </div>
+        <a asp-action="Create" class="hero-action">
+            <i class="bi bi-plus-lg"></i>New Ticket
+        </a>
+    </div>
+
+    <div class="stat-chips" style="position:relative;z-index:1">
+        <div class="stat-chip">
+            <span class="chip-dot" style="background:#fff"></span>
+            <span class="chip-num">@Model.Total</span>
+            <span style="opacity:.85">Total</span>
+        </div>
+        <div class="stat-chip">
+            <span class="chip-dot" style="background:#a3bffa"></span>
+            <span class="chip-num">@openCount</span>
+            <span style="opacity:.85">Open</span>
+        </div>
+        <div class="stat-chip">
+            <span class="chip-dot" style="background:#f093fb"></span>
+            <span class="chip-num">@inProgCount</span>
+            <span style="opacity:.85">In Progress</span>
+        </div>
+        <div class="stat-chip">
+            <span class="chip-dot" style="background:#fed7d7"></span>
+            <span class="chip-num">@overdueCount</span>
+            <span style="opacity:.85">Overdue</span>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════ FILTER PANEL ═══ -->
+<div class="filter-panel">
+    <div class="filter-panel-title">
+        <i class="bi bi-sliders"></i>
+        Filters
+        @if (hasFilters)
+        {
+            <span class="filter-active-badge">Active</span>
+        }
+    </div>
+    <form method="get" id="ticketFilterForm">
+        <div class="row g-3 align-items-end">
+            <div class="col-sm-6 col-lg-3">
+                <label class="form-label" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#718096;margin-bottom:6px">Status</label>
+                <select name="Status" class="form-select filter-select" onchange="document.getElementById('ticketFilterForm').submit()">
+                    <option value="">All Statuses</option>
+                    @foreach (var s in new[] { ("open","Open"), ("in_progress","In Progress"), ("closed","Closed") })
+                    {
+                        if (Model.Filter.Status == s.Item1)
+                        { <option value="@s.Item1" selected>@s.Item2</option> }
+                        else
+                        { <option value="@s.Item1">@s.Item2</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label class="form-label" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#718096;margin-bottom:6px">Priority</label>
+                <select name="Priority" class="form-select filter-select" onchange="document.getElementById('ticketFilterForm').submit()">
+                    <option value="">All Priorities</option>
+                    @foreach (var p in new[] { ("critical","Critical"), ("urgent","Urgent"), ("normal","Normal"), ("low","Low") })
+                    {
+                        if (Model.Filter.Priority == p.Item1)
+                        { <option value="@p.Item1" selected>@p.Item2</option> }
+                        else
+                        { <option value="@p.Item1">@p.Item2</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label class="form-label" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#718096;margin-bottom:6px">Building</label>
+                <select name="BuildingId" class="form-select filter-select" onchange="document.getElementById('ticketFilterForm').submit()">
+                    <option value="">All Buildings</option>
+                    @foreach (var b in buildings)
+                    {
+                        if (Model.Filter.BuildingId == b.Id)
+                        { <option value="@b.Id" selected>@b.Name</option> }
+                        else
+                        { <option value="@b.Id">@b.Name</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="d-flex gap-2 align-items-center" style="padding-top:2px">
+                    <button type="submit" class="btn-apply">
+                        <i class="bi bi-search"></i>Search
+                    </button>
+                    @if (hasFilters)
+                    {
+                        <a asp-action="Index" class="btn-reset">
+                            <i class="bi bi-x-lg"></i>Clear
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ════════════════════════════════════ TABLE CARD ═════ -->
+<div class="tickets-table-card">
+
+    <div class="table-header-bar">
+        <div class="table-title">
+            <i class="bi bi-list-ul" style="color:#667eea"></i>
+            All Tickets
+        </div>
+        <span class="table-count">
+            @if (Model.Total > 0)
+            { @($"{from}–{to} of {Model.Total}") }
+            else
+            { @("No results") }
+        </span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="tickets-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Location</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Due Date</th>
+                    <th>Assigned To</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model.Tickets)
+                {
+                    var priGrad    = PriorityGradient(t.Priority);
+                    var statGrad   = StatusGradient(t.Status);
+                    var statIcon   = StatusIcon(t.Status);
+                    var initials   = t.AssignedToUserName != null
+                                        ? string.Concat(t.AssignedToUserName.Split(' ').Where(w => w.Length > 0).Take(2).Select(w => w[0].ToString().ToUpper()))
+                                        : "";
+
+                    <tr onclick="window.location.href='@Url.Action("Details", new { id = t.Id })'">
+                        <td>
+                            <span class="ticket-num">@t.TicketNumber</span>
+                        </td>
+                        <td>
+                            <a class="ticket-title-link" href="@Url.Action("Details", new { id = t.Id })">
+                                @t.Title
+                                @if (t.IsOverdue)
+                                {
+                                    <span class="badge-overdue-pill">Overdue</span>
+                                }
+                            </a>
+                            <div class="ticket-meta">
+                                <i class="bi bi-cpu" style="font-size:10px"></i>@t.AssetName
+                            </div>
+                        </td>
+                        <td>
+                            <div class="location-building">
+                                <i class="bi bi-building me-1" style="font-size:11px;color:#a0aec0"></i>@t.BuildingName
+                            </div>
+                            @if (t.FloorLevel.HasValue)
+                            {
+                                <div class="location-floor">Floor @t.FloorLevel</div>
+                            }
+                        </td>
+                        <td>
+                            <span class="pri-badge" style="background:@priGrad">
+                                <span class="dot"></span>
+                                @t.Priority
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-pill" style="background:@statGrad">
+                                <i class="bi @statIcon" style="font-size:11px"></i>
+                                @t.Status.Replace("_", " ")
+                            </span>
+                        </td>
+                        <td>
+                            <span class="due-date @(t.IsOverdue ? "due-overdue" : "due-ok")">
+                                <i class="bi @(t.IsOverdue ? "bi-exclamation-circle" : "bi-calendar3") due-icon"></i>@t.DueAt.ToString("MMM d, yyyy")
+                            </span>
+                        </td>
+                        <td>
+                            @if (t.AssignedToUserName != null)
+                            {
+                                <div class="d-flex align-items-center">
+                                    <span class="assignee-avatar">@initials</span>
+                                    <span class="assignee-name">@t.AssignedToUserName</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="unassigned-pill">
+                                    <i class="bi bi-person-dash me-1"></i>Unassigned
+                                </span>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @if (!Model.Tickets.Any())
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-tickets">
+                                <i class="bi bi-ticket-detailed empty-tickets-icon"></i>
+                                @if (hasFilters)
+                                {
+                                    <h6>No tickets match your filters</h6>
+                                    <p>Try adjusting or clearing the filters above to see more results.</p>
+                                    <a asp-action="Index" class="btn-apply" style="display:inline-flex">
+                                        <i class="bi bi-x-circle me-1"></i>Clear Filters
+                                    </a>
+                                }
+                                else
+                                {
+                                    <h6>No tickets yet</h6>
+                                    <p>Create your first maintenance ticket to get started.</p>
+                                    <a asp-action="Create" class="btn-apply" style="display:inline-flex">
+                                        <i class="bi bi-plus-lg me-1"></i>Create Ticket
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Total > 0)
+    {
+        <div class="table-footer">
+            <span class="table-showing">
+                Showing <strong>@from–@to</strong> of <strong>@Model.Total</strong> tickets
+            </span>
+            @await Html.PartialAsync("_Pagination", new PaginationModel
+            {
+                Page       = Model.Page,
+                TotalPages = totalPages,
+                HasPrev    = Model.Page > 1,
+                HasNext    = Model.Page < totalPages,
+                BaseUrl    = baseUrl
+            })
+        </div>
+    }
+
+</div>

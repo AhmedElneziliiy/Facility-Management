@@ -1,0 +1,131 @@
+/* ─── Hero ─────────────────────────────────── */
+.tickets-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+.tickets-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+}
+.tickets-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 40%;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+}
+.hero-title   { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
+.hero-sub     { font-size: 13px; opacity: .8; margin: 0; }
+.hero-action  { background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,.3); border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; text-decoration: none; transition: background .2s; display:inline-flex; align-items:center; gap:6px; }
+.hero-action:hover { background: rgba(255,255,255,0.28); color: #fff; }
+
+/* ─── Stat Chips ─────────────────────────────── */
+.stat-chips { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+.stat-chip  { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25); border-radius: 30px; padding: 6px 16px; font-size: 13px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(4px); }
+.stat-chip .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.stat-chip .chip-num { font-size: 18px; font-weight: 700; line-height: 1; }
+
+/* ─── Filter Panel ───────────────────────────── */
+.filter-panel {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(102,126,234,.08);
+    border: 1px solid #eef0f7;
+}
+.filter-panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #667eea; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+.filter-select { border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; padding: 8px 12px; color: #2d3748; transition: border-color .2s, box-shadow .2s; background: #fafafa; }
+.filter-select:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.15); outline: none; background: #fff; }
+.btn-apply  { background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; border: none; border-radius: 8px; padding: 9px 22px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-apply:hover { opacity: .88; }
+.btn-reset  { background: #fff; color: #718096; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; text-decoration: none; transition: border-color .2s, color .2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-reset:hover { border-color: #667eea; color: #667eea; }
+.filter-active-badge { background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 2px 8px; }
+
+/* ─── Tickets Table Card ─────────────────────── */
+.tickets-table-card {
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(102,126,234,.09);
+    border: none;
+}
+.table-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f4ff;
+}
+.table-title   { font-size: 14px; font-weight: 700; color: #2d3748; display: flex; align-items: center; gap: 8px; }
+.table-count   { font-size: 12px; color: #a0aec0; background: #f7fafc; border-radius: 20px; padding: 3px 10px; }
+.tickets-table { width: 100%; border-collapse: collapse; }
+.tickets-table thead tr { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); }
+.tickets-table thead th { color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 13px 16px; white-space: nowrap; border: none; }
+.tickets-table thead th:first-child { padding-left: 20px; border-radius: 0; }
+.tickets-table thead th:last-child  { padding-right: 20px; }
+.tickets-table tbody tr { border-bottom: 1px solid #f7fafc; transition: background .15s, transform .15s; cursor: pointer; }
+.tickets-table tbody tr:last-child  { border-bottom: none; }
+.tickets-table tbody tr:hover { background: #f7f9ff; transform: translateX(2px); }
+.tickets-table tbody td { padding: 13px 16px; vertical-align: middle; }
+.tickets-table tbody td:first-child { padding-left: 20px; }
+.tickets-table tbody td:last-child  { padding-right: 20px; }
+
+/* ─── Ticket Number ─────────────────────────── */
+.ticket-num { font-family: monospace; font-size: 11px; color: #a0aec0; background: #f7fafc; border-radius: 6px; padding: 3px 8px; white-space: nowrap; }
+
+/* ─── Title cell ─────────────────────────────── */
+.ticket-title-link { font-weight: 600; color: #2d3748; text-decoration: none; font-size: 14px; display: block; line-height: 1.3; }
+.ticket-title-link:hover { color: #667eea; }
+.ticket-meta { font-size: 11px; color: #a0aec0; margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+
+/* ─── Overdue badge ─────────────────────────── */
+.badge-overdue-pill { background: linear-gradient(135deg,#fa709a,#fee140); color: #fff; font-size: 9px; font-weight: 700; border-radius: 20px; padding: 2px 8px; text-transform: uppercase; letter-spacing: .3px; vertical-align: middle; margin-left: 4px; }
+
+/* ─── Priority badge ────────────────────────── */
+.pri-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; border-radius: 20px; padding: 4px 10px; color: #fff; white-space: nowrap; }
+.pri-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.6); }
+
+/* ─── Status badge ──────────────────────────── */
+.status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; border-radius: 20px; padding: 4px 12px; color: #fff; white-space: nowrap; text-transform: capitalize; }
+.status-dot  { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.75); }
+
+/* ─── Due Date ─────────────────────────────── */
+.due-date { font-size: 12px; white-space: nowrap; }
+.due-overdue { color: #e53e3e; font-weight: 700; }
+.due-ok      { color: #718096; }
+.due-icon    { margin-right: 4px; font-size: 11px; }
+
+/* ─── Assignee ─────────────────────────────── */
+.assignee-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px; flex-shrink: 0; }
+.assignee-name  { font-size: 12px; color: #4a5568; }
+.unassigned-pill { font-size: 11px; color: #a0aec0; font-style: italic; }
+
+/* ─── Location cell ─────────────────────────── */
+.location-building { font-size: 13px; font-weight: 600; color: #2d3748; }
+.location-floor    { font-size: 11px; color: #a0aec0; margin-top: 1px; }
+
+/* ─── Empty state ───────────────────────────── */
+.empty-tickets {
+    text-align: center;
+    padding: 60px 20px;
+}
+.empty-tickets-icon { font-size: 48px; color: #e2e8f0; margin-bottom: 16px; display: block; }
+.empty-tickets h6   { font-size: 15px; font-weight: 600; color: #4a5568; margin-bottom: 8px; }
+.empty-tickets p    { font-size: 13px; color: #a0aec0; margin-bottom: 20px; }
+
+/* ─── Table Footer ──────────────────────────── */
+.table-footer { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid #f0f4ff; flex-wrap: wrap; gap: 8px; }
+.table-showing { font-size: 12px; color: #a0aec0; }
+.table-showing strong { color: #4a5568; }
